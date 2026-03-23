@@ -1499,7 +1499,8 @@ ${ptB}
               return (
                 <div key={i} onClick={()=>setSelDay(selDay===i?null:i)}
                   className="glass-card"
-                  style={{background:isSel?`rgba(${ec==='#00F0C0'?'0,240,200':''}${ec==='#FF4455'?'255,68,85':''}${ec==='#00E87A'?'0,232,122':''}${ec==='#FFB800'?'255,184,0':''}${ec==='#00C8FF'?'0,200,255':''}${ec==='#FF2D78'?'255,45,120':''}${ec==='#4A6A9A'?'74,106,154':''}${ec==='#FF6B35'?'255,107,53':''},0.08)`:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(168,192,255,0.07)",padding:"10px 12px",cursor:"pointer",
+                  style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(168,192,255,0.07)",padding:"10px 12px",cursor:"pointer",
+                    background:isSel?`rgba(${ec==='#00F0C0'?'0,240,200':''}${ec==='#FF4455'?'255,68,85':''}${ec==='#00E87A'?'0,232,122':''}${ec==='#FFB800'?'255,184,0':''}${ec==='#00C8FF'?'0,200,255':''}${ec==='#FF2D78'?'255,45,120':''}${ec==='#4A6A9A'?'74,106,154':''}${ec==='#FF6B35'?'255,107,53':''},0.08)`:"rgba(4,10,22,0.97)",
                     boxShadow:isSel?`0 0 16px ${ec}33, 0 4px 20px rgba(0,0,0,0.5)`:"none",
                     transition:"all .2s",
                   }}>
@@ -1638,6 +1639,231 @@ ${ptB}
           <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#4A5570"}}>Задай точку А и точку Б — Claude построит путь</div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ── REMIX TAB ─────────────────────────────────────────────
+// Shows trending Threads posts → remix through persona's soul
+
+const REMIX_EXAMPLES = [
+  {
+    id:"ex1", author:"@maria.travels", likes:4821, replies:312,
+    text:"Уехала в Португалию на месяц одна. Никого не знаю, языка не знаю. Первые три дня плакала. Потом что-то щёлкнуло. Теперь не могу объяснить что изменилось, но изменилось всё.",
+    topic:"solo travel", viral:95,
+  },
+  {
+    id:"ex2", author:"@style.notes", likes:3240, replies:198,
+    text:'Перестала покупать "на потом". Теперь только то, что надену завтра. Гардероб уменьшился втрое. Утром стало легче дышать.',
+    topic:"минимализм", viral:92,
+  },
+  {
+    id:"ex3", author:"@psych.everyday", likes:6102, replies:445,
+    text:"Терапевт спросила: а что бы ты сделала если бы точно знала что не осудят? Я не смогла ответить. Два года прошло. Теперь знаю.",
+    topic:"терапия", viral:97,
+  },
+  {
+    id:"ex4", author:"@honest.fashion", likes:2890, replies:221,
+    text:"Дорогая одежда не делает тебя увереннее. Проверено на себе. Уверенность — это когда ты знаешь зачем ты здесь, а не сколько стоит твоя куртка.",
+    topic:"стиль", viral:88,
+  },
+  {
+    id:"ex5", author:"@life.after30", likes:5510, replies:380,
+    text:"30 лет. Впервые в жизни не знаю что будет через год. Раньше это пугало до паники. Сейчас — это и есть жизнь.",
+    topic:"жизнь после 30", viral:94,
+  },
+  {
+    id:"ex6", author:"@run.think", likes:1980, replies:167,
+    text:"Начала бегать не чтобы похудеть. Бегаю чтобы голова замолчала хотя бы на 40 минут. Работает лучше любого антидепрессанта.",
+    topic:"бег", viral:86,
+  },
+];
+
+function RemixTab({ persona }) {
+  const [custom,    setCustom]   = useState("");
+  const [remixing,  setRemixing] = useState(null); // post id being remixed
+  const [results,   setResults]  = useState({});   // {postId: remixedText}
+  const [selected,  setSelected] = useState(null);
+  const [liveUrl,   setLiveUrl]  = useState("");
+  const [fetching,  setFetching] = useState(false);
+  const [posts,     setPosts]    = useState(REMIX_EXAMPLES);
+
+  const soul  = persona.soul  || {};
+  const st    = persona.state || ST_DEF;
+
+  const buildRemixPrompt = (originalText) => {
+    const wounds  = (soul.wounds||[]).map(w=>`"${w.text}"`).join(", ");
+    const fears   = (soul.fears||[]).map(f=>f.text).join(", ");
+    const voices  = (soul.voices||[]).map(v=>`${v.who}: "${v.says}"`).join("; ");
+    return `Ты — ${persona.name}, ${persona.age} лет, ${persona.city}.
+Архетипы: ${soul.archetypes||""}
+Раны: ${wounds}
+Страхи: ${fears}
+Внутренние голоса: ${voices}
+Настроение: ${st.mood}%, Тревога: ${st.anxiety}%, Энергия: ${st.energy}%
+
+Вот залетевший пост в Threads:
+"${originalText}"
+
+ЗАДАЧА: Перепиши этот пост ЧЕРЕЗ ПРИЗМУ СВОЕЙ ДУШИ.
+Сохрани структуру и эмоциональную волну оригинала, но:
+- Замени детали на свои (другая страна, своя история, свои раны)
+- Пиши от первого лица в своём голосе — живо, без позы, разговорно
+- Длина примерно такая же
+- 0–1 эмодзи
+- НЕ копируй оригинал дословно — это твоя история, просто похожая волна
+
+Верни ТОЛЬКО текст поста, без кавычек и пояснений.`;
+  };
+
+  const remixPost = async (post) => {
+    const id = post.id || "custom";
+    setRemixing(id);
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY||"",
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 600,
+          messages: [{ role: "user", content: buildRemixPrompt(post.text) }],
+        }),
+      });
+      const d = await r.json();
+      if(d.error) { console.error(d.error); setRemixing(null); return; }
+      const txt = d.content?.map(i=>i.text||"").join("")||"";
+      setResults(prev => ({ ...prev, [id]: txt.trim() }));
+      setSelected(id);
+    } catch(e) { console.error(e); }
+    setRemixing(null);
+  };
+
+  const addCustomPost = () => {
+    if(!custom.trim()) return;
+    const newPost = {
+      id: "custom_" + Date.now(),
+      author: "@вставлено вручную",
+      likes: null, replies: null,
+      text: custom.trim(),
+      topic: "custom", viral: null,
+    };
+    setPosts(prev => [newPost, ...prev]);
+    setCustom("");
+  };
+
+  const copyText = (text) => navigator.clipboard?.writeText(text);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+      {/* Header */}
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:18,border:"1px solid rgba(168,192,255,0.07)",padding:"18px 20px"}}>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3.5,color:"#4A5570",textTransform:"uppercase",marginBottom:4}}>Ремикс трендов</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7888AA",lineHeight:1.5,marginBottom:16}}>
+          Видишь залетевшую ветку — нажми <span style={{color:"#A8C0FF",fontWeight:600}}>🔀 Ремикс</span> и получи её переписанной через душу персонажа
+        </div>
+
+        {/* Paste custom post */}
+        <div style={{display:"flex",gap:8}}>
+          <textarea
+            value={custom}
+            onChange={e=>setCustom(e.target.value)}
+            placeholder="Вставь текст залетевшего поста из Threads..."
+            style={{flex:1,background:"rgba(168,192,255,0.04)",border:"1px solid rgba(168,192,255,0.12)",borderRadius:12,padding:"10px 14px",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",outline:"none",resize:"none",minHeight:64,lineHeight:1.5}}
+          />
+          <button onClick={addCustomPost} disabled={!custom.trim()}
+            style={{alignSelf:"flex-end",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,color:custom.trim()?"#060914":"#4A5570",background:custom.trim()?"#A8C0FF":"rgba(168,192,255,0.06)",border:"none",borderRadius:10,padding:"10px 16px",cursor:custom.trim()?"pointer":"default",transition:"all .2s",whiteSpace:"nowrap",boxShadow:custom.trim()?"0 0 16px rgba(168,192,255,0.3)":"none"}}>
+            + Добавить
+          </button>
+        </div>
+      </div>
+
+      {/* Trending posts grid */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+        {posts.map(post => {
+          const remixed = results[post.id];
+          const isRemixing = remixing === post.id;
+          const isSelected = selected === post.id;
+
+          return (
+            <div key={post.id}
+              style={{background:"rgba(255,255,255,0.03)",borderRadius:16,border:`1px solid ${isSelected?"rgba(168,192,255,0.25)":"rgba(168,192,255,0.07)"}`,overflow:"hidden",transition:"all .2s",boxShadow:isSelected?"0 0 30px rgba(168,192,255,0.08)":"none"}}>
+
+              {/* Original post */}
+              <div style={{padding:"14px 16px"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(168,192,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>@</div>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#7888AA"}}>{post.author}</span>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    {post.viral && (
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,color:"#FFD580",background:"rgba(255,213,128,0.1)",padding:"2px 7px",borderRadius:10,border:"1px solid rgba(255,213,128,0.2)"}}>
+                        🔥 {post.viral}%
+                      </span>
+                    )}
+                    {post.topic && (
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#A8C0FF",background:"rgba(168,192,255,0.08)",padding:"2px 7px",borderRadius:10,border:"1px solid rgba(168,192,255,0.15)"}}>
+                        #{post.topic}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:13.5,color:"#C8D4F0",lineHeight:1.7,marginBottom:10,fontStyle:"italic"}}>
+                  {post.text}
+                </div>
+
+                {post.likes !== null && (
+                  <div style={{display:"flex",gap:12,marginBottom:10}}>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>❤️ {post.likes.toLocaleString()}</span>
+                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>💬 {post.replies}</span>
+                  </div>
+                )}
+
+                <button onClick={()=>remixPost(post)} disabled={isRemixing}
+                  style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:600,
+                    color:isRemixing?"#4A5570":"#A8C0FF",
+                    background:isRemixing?"rgba(168,192,255,0.04)":"rgba(168,192,255,0.1)",
+                    border:`1px solid ${isRemixing?"rgba(168,192,255,0.08)":"rgba(168,192,255,0.25)"}`,
+                    borderRadius:10,padding:"8px",cursor:isRemixing?"wait":"pointer",
+                    transition:"all .2s",letterSpacing:0.3,
+                    boxShadow:isRemixing?"none":"0 0 16px rgba(168,192,255,0.1)"}}>
+                  {isRemixing ? "⟳ Переписываю через душу..." : "🔀 Ремикс через душу"}
+                </button>
+              </div>
+
+              {/* Remixed result */}
+              {remixed && (
+                <div style={{borderTop:"1px solid rgba(168,192,255,0.08)",padding:"14px 16px",background:"rgba(168,192,255,0.03)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{width:6,height:6,borderRadius:"50%",background:"#A8C0FF",boxShadow:"0 0 6px #A8C0FF"}}/>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,color:"#A8C0FF",letterSpacing:0.5}}>{persona.name}</span>
+                    </div>
+                    <button onClick={()=>copyText(remixed)}
+                      style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",background:"none",border:"none",cursor:"pointer",padding:2,transition:"color .15s"}}
+                      onMouseOver={e=>e.currentTarget.style.color="#A8C0FF"}
+                      onMouseOut={e=>e.currentTarget.style.color="#4A5570"}>
+                      📋 копировать
+                    </button>
+                  </div>
+                  <div style={{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:13.5,color:"#F0F4FF",lineHeight:1.7}}>
+                    {remixed}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 }
@@ -1932,7 +2158,7 @@ export default function PersonaOS() {
     </div>
   );
 
-  const TABS = [{id:"soul",l:"✦ Душа"},{id:"mind",l:"◉ Сознание"},{id:"arc",l:"↗ Арка"},{id:"studio",l:"⚡ Studio"},{id:"library",l:"◻ Библиотека"}];
+  const TABS = [{id:"soul",l:"✦ Душа"},{id:"mind",l:"◉ Сознание"},{id:"arc",l:"↗ Арка"},{id:"studio",l:"⚡ Studio"},{id:"remix",l:"🔀 Ремикс"},{id:"library",l:"◻ Библиотека"}];
 
   return (
     <div style={{display:"flex",minHeight:"100vh",fontFamily:F.b,background:"#060914",position:"relative",overflow:"hidden"}}>
@@ -2116,7 +2342,8 @@ export default function PersonaOS() {
                 {tab==="soul"    && <SoulEditor key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/>}
                 {tab==="mind"    && <MindTab    key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/>}
                 {tab==="arc"     && <ArcTab     key={sel.id} persona={sel} onSave={saveContent}/>}
-                {tab==="studio"  && <StudioTab  key={sel.id} persona={sel} onSave={saveContent}/>}
+                {tab==="studio"  && <StudioTab  key={sel.id} persona={sel} onSave={saveContent}/> }
+                {tab==="remix"   && <RemixTab   key={sel.id} persona={sel}/>}
                 {tab==="library" && <LibraryTab personaId={sel.id} content={content} onStatusChange={updateStatus} onDelete={deleteContent}/>}
               </div>
             </div>
