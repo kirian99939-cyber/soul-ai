@@ -1499,8 +1499,7 @@ ${ptB}
               return (
                 <div key={i} onClick={()=>setSelDay(selDay===i?null:i)}
                   className="glass-card"
-                  style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(168,192,255,0.07)",padding:"10px 12px",cursor:"pointer",
-                    background:isSel?`rgba(${ec==='#00F0C0'?'0,240,200':''}${ec==='#FF4455'?'255,68,85':''}${ec==='#00E87A'?'0,232,122':''}${ec==='#FFB800'?'255,184,0':''}${ec==='#00C8FF'?'0,200,255':''}${ec==='#FF2D78'?'255,45,120':''}${ec==='#4A6A9A'?'74,106,154':''}${ec==='#FF6B35'?'255,107,53':''},0.08)`:"rgba(4,10,22,0.97)",
+                  style={{background:isSel?`rgba(${ec==='#00F0C0'?'0,240,200':''}${ec==='#FF4455'?'255,68,85':''}${ec==='#00E87A'?'0,232,122':''}${ec==='#FFB800'?'255,184,0':''}${ec==='#00C8FF'?'0,200,255':''}${ec==='#FF2D78'?'255,45,120':''}${ec==='#4A6A9A'?'74,106,154':''}${ec==='#FF6B35'?'255,107,53':''},0.08)`:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(168,192,255,0.07)",padding:"10px 12px",cursor:"pointer",
                     boxShadow:isSel?`0 0 16px ${ec}33, 0 4px 20px rgba(0,0,0,0.5)`:"none",
                     transition:"all .2s",
                   }}>
