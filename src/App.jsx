@@ -143,6 +143,34 @@ const FORMATS_DEF = [
   {id:"brand",n:"🏷 Нативная интеграция",v:78,d:"Одежда как часть истории"},
 ];
 
+
+// ── TRENDS HOOK ──────────────────────────────────────────
+function useTrends() {
+  const [trends,    setTrends]    = useState([]);
+  const [loading,   setLoading]   = useState(false);
+  const [fetchedAt, setFetchedAt] = useState(null);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const base = import.meta.env.DEV ? "" : "";
+      const r = await fetch(`${base}/api/trends?sources=google,curated`);
+      const d = await r.json();
+      setTrends(d.trends || []);
+      setFetchedAt(new Date(d.fetchedAt));
+    } catch(e) {
+      console.error("Trends fetch error:", e);
+      // fallback: return empty, Studio will use internal hotTopics
+      setTrends([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { refresh(); }, []);
+
+  return { trends, loading, fetchedAt, refresh };
+}
+
 // ── LERA TEMPLATE ────────────────────────────────────────
 const LERA_SOUL = {
   psycho:{mbti:"ENFJ — Протагонист",temperament:"Сангвиник-холерик",enneagram:"7w8 — Энтузиаст-Бунтарь",attachment:"Тревожно-избегающий → надёжный (2 года терапии)"},
@@ -1009,8 +1037,30 @@ function StudioTab({persona, onSave}) {
   const [selPost,  setSelPost]  = useState(null);
   const [replies,  setReplies]  = useState([]);
   const [genRep,   setGenRep]   = useState(false);
+  const [trendSrc, setTrendSrc] = useState("internal"); // "internal" | "live"
 
-  const topics  = useMemo(()=>hotTopics(niches, persona.soul||{}, persona.state||ST_DEF),[niches,persona]);
+  const { trends: liveTrends, loading: trendsLoading, fetchedAt, refresh: refreshTrends } = useTrends();
+
+  const topics  = useMemo(()=>{
+    if(trendSrc === "live" && liveTrends.length > 0) {
+      // Merge live trends with persona soul filter
+      const soul = persona.soul || {};
+      return liveTrends.map(t => {
+        let score = t.score || 60;
+        const txt = t.text.toLowerCase();
+        if(txt.includes("стиль") || txt.includes("гардероб")) score += 10;
+        if(txt.includes("путешеств") || txt.includes("travel"))  score += 8;
+        if(txt.includes("женщин") || txt.includes("соло"))       score += 7;
+        if(txt.includes("терапи") || txt.includes("психолог"))   score += 6;
+        if(txt.includes("уверен") || txt.includes("свобод"))     score += 5;
+        const reason = t.source === "google" ? "🔴 Google Trends RU" :
+                       t.source.startsWith("telegram") ? "✈️ Telegram" : "✦ Curated";
+        return { topic: t.text, score: Math.min(score, 99), reason };
+      }).sort((a,b)=>b.score-a.score).slice(0,12);
+    }
+    return hotTopics(niches, persona.soul||{}, persona.state||ST_DEF);
+  },[niches, persona, trendSrc, liveTrends]);
+
   const aura    = computeAura(persona.state||ST_DEF);
 
   const generate = async () => {
@@ -1021,9 +1071,8 @@ function StudioTab({persona, onSave}) {
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2200,messages:[{role:"user",content:buildPrompt(persona,{formats,topics},ctx,num)}]}),
       });
       const d = await r.json();
-      if (d.error) { console.error("Anthropic API error:", d.error); setGenning(false); return; }
       const txt = d.content?.map(i=>i.text||"").join("")||"";
-      setPosts(JSON.parse(txt.replace(/```json/g,"").replace(/```/g,"").trim()));
+      setPosts(JSON.parse(txt.replace(/```json|```/g,"").trim()));
     } catch(e){setPosts([{text:"Ошибка: "+e.message,format:"",topic:"",tag:"",why:""}]);}
     setGenning(false);
   };
@@ -1036,8 +1085,7 @@ function StudioTab({persona, onSave}) {
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:`Ты — ${persona.name}. Пост: "${txt}"\n\n4 комментария разных людей + ответ ${persona.name.split(" ")[0]} на каждый (честный, провокационный).\nJSON: [{"comment":"...","user":"...","reply":"..."}]`}]}),
       });
       const d = await r.json();
-      if (d.error) { console.error("Anthropic API error:", d.error); setGenRep(false); return; }
-      setReplies(JSON.parse((d.content?.map(i=>i.text||"").join("")||"").replace(/```json/g,"").replace(/```/g,"").trim()));
+      setReplies(JSON.parse((d.content?.map(i=>i.text||"").join("")||"").replace(/```json|```/g,"").trim()));
     } catch(e){setReplies([]);}
     setGenRep(false);
   };
@@ -1074,12 +1122,38 @@ function StudioTab({persona, onSave}) {
           style={{width:"100%",border:"1px solid rgba(168,192,255,0.08)",borderRadius:10,padding:"10px 13px",fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",background:"rgba(168,192,255,0.03)",outline:"none",resize:"vertical",minHeight:56}}/>
       </div>
 
-      {/* Niches */}
+      {/* Niches / Trends */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:16,border:"1px solid rgba(168,192,255,0.07)",padding:"14px 18px",marginBottom:10}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3,color:"#4A5570",textTransform:"uppercase"}}>🔥 Горячие темы</div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3,color:"#4A5570",textTransform:"uppercase"}}>🔥 Горячие темы</div>
+            {/* Source toggle */}
+            <div style={{display:"flex",gap:2,background:"rgba(168,192,255,0.06)",borderRadius:8,padding:2}}>
+              {[{id:"internal",l:"◈ Внутренние"},{id:"live",l:"⚡ Live"}].map(s=>(
+                <button key={s.id} onClick={()=>setTrendSrc(s.id)}
+                  style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,padding:"3px 9px",borderRadius:6,border:"none",cursor:"pointer",transition:"all .15s",
+                    background:trendSrc===s.id?"rgba(168,192,255,0.18)":"transparent",
+                    color:trendSrc===s.id?"#A8C0FF":"#4A5570",
+                    boxShadow:trendSrc===s.id?"0 0 10px rgba(168,192,255,0.2)":"none",
+                  }}>{s.l}</button>
+              ))}
+            </div>
+            {trendSrc==="live" && (
+              <button onClick={refreshTrends} title="Обновить тренды"
+                style={{background:"none",border:"none",cursor:"pointer",color:"#4A5570",fontSize:11,padding:2,transition:"color .15s",lineHeight:1}}
+                onMouseOver={e=>e.currentTarget.style.color="#A8C0FF"}
+                onMouseOut={e=>e.currentTarget.style.color="#4A5570"}>
+                {trendsLoading?"⟳":"↻"}
+              </button>
+            )}
+            {trendSrc==="live" && fetchedAt && (
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570"}}>
+                {fetchedAt.toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}
+              </span>
+            )}
+          </div>
           <div style={{display:"flex",gap:4}}>
-            {NICHES_DEF.map(n=>(
+            {trendSrc==="internal" && NICHES_DEF.map(n=>(
               <button key={n.id} onClick={()=>setNiches(p=>p.includes(n.id)?p.filter(x=>x!==n.id):[...p,n.id])}
                 title={n.name}
                 style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,padding:"4px 8px",borderRadius:7,cursor:"pointer",transition:"all .15s",
@@ -1251,18 +1325,24 @@ ${ptB}
         method:"POST",
         headers:{
           "Content-Type":"application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY||"",
+          "anthropic-version":"2023-06-01",
+          "anthropic-dangerous-direct-browser-access":"true",
         },
-        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:3000,
-          messages:[{role:"user", content:buildArcPrompt()}] }),
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens: 3000,
+          messages:[{role:"user", content:buildArcPrompt()}]
+        }),
       });
       const d = await r.json();
-      if (d.error) { console.error("Anthropic API error:", d.error); setGenning(false); return; }
+      if(d.error){ console.error("Claude arc error:", d.error); setGenning(false); return; }
       const txt = d.content?.map(i=>i.text||"").join("")||"";
-      setArc(JSON.parse(txt.replace(/```json/g,"").replace(/```/g,"").trim()));
-    } catch(e) { console.error(e); }
+      const cleaned = txt.replace(/```json/g,"").replace(/```/g,"").trim();
+      setArc(JSON.parse(cleaned));
+    } catch(e) {
+      console.error("Arc generate error:", e);
+    }
     setGenning(false);
   };
 
