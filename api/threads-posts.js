@@ -20,30 +20,40 @@ const KEYWORDS = [
 async function searchThreads(keyword, token) {
   try {
     const url = `${BASE}/threads/post/search?keyword=${encodeURIComponent(keyword)}&token=${token}&max_depth=1`;
+    console.log("Fetching:", url.replace(token, "TOKEN_HIDDEN"));
+
     const res = await fetch(url);
-    if (!res.ok) return [];
+    console.log("Response status:", res.status);
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.log("Error body:", errText);
+      return [];
+    }
+
     const data = await res.json();
-    const posts = data?.data || data?.posts || [];
-    return posts.slice(0, 4).map(p => {
-      const text = p.caption?.text || p.text || "";
-      const likes = p.like_count || 0;
-      const replies = p.text_post_app_info?.direct_reply_count || 0;
-      const postCode = p.code || p.shortcode || p.pk || p.id || "";
-      const username = p.user?.username || "threads";
-      return {
-        id: p.pk || p.id || String(Date.now() + Math.random()),
-        author: `@${username}`,
-        postUrl: postCode ? `https://www.threads.net/@${username}/post/${postCode}` : `https://www.threads.net/@${username}`,
-        text: text.trim(),
-        likes,
-        replies,
-        keyword,
-        viral: Math.min(99, 50 + Math.floor((likes / 100) * 10) + Math.floor(replies / 5)),
-        source: "threads_live",
-        fetchedAt: new Date().toISOString(),
-      };
-    }).filter(p => p.text.length > 30);
+    console.log("Data keys:", Object.keys(data));
+    console.log("Posts count:", (data?.data || data?.posts || []).length);
+
+    return (data?.data || data?.posts || [])
+      .slice(0, 4)
+      .map(p => {
+        const text = p.caption?.text || p.text || "";
+        return {
+          id: p.pk || p.id || String(Date.now() + Math.random()),
+          author: `@${p.user?.username || "threads"}`,
+          postUrl: p.code ? `https://www.threads.net/@${p.user?.username}/post/${p.code}` : null,
+          text: text.trim(),
+          likes: p.like_count || 0,
+          replies: p.text_post_app_info?.direct_reply_count || 0,
+          keyword,
+          viral: Math.min(99, 60 + Math.floor((p.like_count || 0) / 100)),
+          source: "threads_live",
+        };
+      }).filter(p => p.text.length > 30);
+
   } catch (e) {
+    console.log("Fetch exception:", e.message);
     return [];
   }
 }
