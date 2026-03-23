@@ -81,22 +81,23 @@ function getFallback() {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") return res.status(200).end();
-  console.log("ENSEMBLEDATA_TOKEN exists:", !!process.env.ENSEMBLEDATA_TOKEN);
-  console.log("Token value:", process.env.ENSEMBLEDATA_TOKEN?.slice(0, 8) + "...");
-  console.log("Testing EnsembleData endpoint...");
-
-  // TEST: direct EnsembleData call
-  const testUrl = `https://ensembledata.com/apis/threads/keyword/search?name=travel&depth=1&token=${process.env.ENSEMBLEDATA_TOKEN}`;
-  console.log("Test URL:", testUrl.replace(process.env.ENSEMBLEDATA_TOKEN, "HIDDEN"));
-  const testRes = await fetch(testUrl);
-  console.log("Test status:", testRes.status);
-  const testData = await testRes.json();
-  console.log("Test response:", JSON.stringify(testData).slice(0, 300));
-
   const token = process.env.ENSEMBLEDATA_TOKEN;
   if (!token) return res.status(200).json({ posts: getFallback(), source: "fallback" });
   const keywords = KEYWORDS.sort(() => Math.random() - 0.5).slice(0, 3);
   const results = await Promise.allSettled(keywords.map(k => searchThreads(k, token)));
-  const posts = results.flatMap(r => r.status === "fulfilled" ? r.value : []).sort((a,b) => b.viral - a.viral).slice(0, 12);
-  return res.status(200).json({ posts: posts.length ? posts : getFallback(), source: posts.length ? "threads_live" : "fallback", fetchedAt: new Date().toISOString() });
+
+  const posts = results
+    .flatMap(r => r.status === "fulfilled" ? r.value : [])
+    .sort((a, b) => b.viral - a.viral)
+    .slice(0, 12);
+
+  if (posts.length === 0) {
+    return res.status(200).json({ posts: getFallback(), source: "fallback" });
+  }
+
+  return res.status(200).json({
+    posts,
+    source: "threads_live",
+    fetchedAt: new Date().toISOString(),
+  });
 }
