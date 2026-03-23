@@ -78,6 +78,15 @@ export default async function handler(req, res) {
   console.log("ENSEMBLEDATA_TOKEN exists:", !!process.env.ENSEMBLEDATA_TOKEN);
   console.log("Token value:", process.env.ENSEMBLEDATA_TOKEN?.slice(0, 8) + "...");
   console.log("Testing EnsembleData endpoint...");
+
+  // TEST: direct EnsembleData call
+  const testUrl = `https://ensembledata.com/apis/threads/keyword/search?name=travel&depth=1&token=${process.env.ENSEMBLEDATA_TOKEN}`;
+  console.log("Test URL:", testUrl.replace(process.env.ENSEMBLEDATA_TOKEN, "HIDDEN"));
+  const testRes = await fetch(testUrl);
+  console.log("Test status:", testRes.status);
+  const testData = await testRes.json();
+  console.log("Test response:", JSON.stringify(testData).slice(0, 300));
+
   const token = process.env.ENSEMBLEDATA_TOKEN;
   if (!token) return res.status(200).json({ posts: getFallback(), source: "fallback" });
   const keywords = KEYWORDS.sort(() => Math.random() - 0.5).slice(0, 3);
