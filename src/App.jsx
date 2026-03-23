@@ -903,6 +903,37 @@ function SoulEditor({persona, onChange}) {
         <Ed value={soul.catchphrases||""} onChange={v=>onChange("soul",{...soul,catchphrases:v})} style={{fontFamily:"'DM Sans',sans-serif",fontSize:11.5,color:"#C8D4F0",fontStyle:"italic"}} multi/>
       </div>
 
+      {/* ── REFERENCE PHOTOS ── */}
+      <div style={{background:"rgba(168,192,255,0.04)",borderRadius:14,padding:"13px 16px",border:"1px solid rgba(168,192,255,0.1)",marginTop:8}}>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:2.5,color:"#A8C0FF",textTransform:"uppercase",marginBottom:10,opacity:0.8}}>📸 Референсные фото</div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
+          {(persona.referencePhotos||[]).map((ph,i)=>(
+            <div key={i} style={{position:"relative",width:72,height:90,borderRadius:10,overflow:"hidden",border:"1px solid rgba(168,192,255,0.15)"}}>
+              <img src={ph} alt={`ref-${i}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+              <button onClick={()=>{const arr=[...(persona.referencePhotos||[])];arr.splice(i,1);onChange("referencePhotos",arr);}}
+                style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",borderRadius:"50%",width:18,height:18,color:"#fff",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>×</button>
+            </div>
+          ))}
+        </div>
+        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",padding:"10px",background:"rgba(168,192,255,0.04)",border:"1px dashed rgba(168,192,255,0.2)",borderRadius:10,fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#7888AA",cursor:"pointer",transition:"all .15s"}}
+          onMouseOver={e=>{e.currentTarget.style.color="#A8C0FF";e.currentTarget.style.borderColor="rgba(168,192,255,0.35)"}}
+          onMouseOut={e=>{e.currentTarget.style.color="#7888AA";e.currentTarget.style.borderColor="rgba(168,192,255,0.2)"}}>
+          <span style={{fontSize:14,opacity:.6}}>✦</span> Загрузить фото
+          <input type="file" multiple accept="image/*" style={{display:"none"}} onChange={e=>{
+            const files = Array.from(e.target.files||[]);
+            Promise.all(files.map(f=>new Promise((res)=>{
+              const reader=new FileReader();
+              reader.onload=()=>res(reader.result);
+              reader.readAsDataURL(f);
+            }))).then(bases=>{
+              onChange("referencePhotos",[...(persona.referencePhotos||[]),...bases]);
+            });
+            e.target.value="";
+          }}/>
+        </label>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:6}}>Фото лица персонажа для генерации (до 5 штук)</div>
+      </div>
+
     </div>
   );
 }

@@ -53,13 +53,18 @@ export default async function handler(req, res) {
 
   try {
     // Step 1: submit generation task
-    const submitRes = await fetch(`${NB_BASE}/generate-image-2`, {
+    const submitRes = await fetch(`${NB_BASE}/api/v1/nanobanana/generate-pro`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${key}`,
       },
-      body: JSON.stringify({ prompt, aspect_ratio: "4:5" }),
+      body: JSON.stringify({
+        prompt,
+        imageUrls: persona?.referencePhotos || [],
+        resolution: "2K",
+        aspectRatio: "4:5"
+      }),
     });
 
     if(!submitRes.ok) {
@@ -76,7 +81,7 @@ export default async function handler(req, res) {
     for(let i = 0; i < 15; i++) {
       await new Promise(r => setTimeout(r, 2000));
 
-      const pollRes = await fetch(`${NB_BASE}/get-task-details?task_id=${taskId}`, {
+      const pollRes = await fetch(`${NB_BASE}/api/v1/nanobanana/task/${taskId}`, {
         headers: { "Authorization": `Bearer ${key}` },
       });
 
