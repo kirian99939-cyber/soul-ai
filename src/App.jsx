@@ -1684,9 +1684,32 @@ function RemixTab({ persona }) {
   const [remixing,  setRemixing] = useState(null); // post id being remixed
   const [results,   setResults]  = useState({});   // {postId: remixedText}
   const [selected,  setSelected] = useState(null);
-  const [liveUrl,   setLiveUrl]  = useState("");
-  const [fetching,  setFetching] = useState(false);
   const [posts,     setPosts]    = useState(REMIX_EXAMPLES);
+  const [liveSource, setLiveSource] = useState("example");
+  const [lastFetch, setLastFetch] = useState(null);
+  const [fetching, setFetching] = useState(false);
+
+  useEffect(()=>{
+    (async()=>{
+      setFetching(true);
+      try {
+        const r = await fetch("/api/threads-posts");
+        const d = await r.json();
+        if(d.posts?.length){ setPosts(d.posts); setLiveSource(d.source||"example"); setLastFetch(new Date()); }
+      } catch(e){ console.log("fallback posts"); }
+      setFetching(false);
+    })();
+  }, []);
+
+  const refreshPosts = async () => {
+    setFetching(true);
+    try {
+      const r = await fetch("/api/threads-posts");
+      const d = await r.json();
+      if(d.posts?.length){ setPosts(d.posts); setLiveSource(d.source||"example"); setLastFetch(new Date()); setResults({}); }
+    } catch(e){}
+    setFetching(false);
+  };
 
   const soul  = persona.soul  || {};
   const st    = persona.state || ST_DEF;
@@ -1764,6 +1787,14 @@ function RemixTab({ persona }) {
       {/* Header */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:18,border:"1px solid rgba(168,192,255,0.07)",padding:"18px 20px"}}>
         <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3.5,color:"#4A5570",textTransform:"uppercase",marginBottom:4}}>Ремикс трендов</div>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+          {liveSource==="threads_live"
+            ? <span style={{fontSize:9,fontWeight:700,color:"#FF6060",background:"rgba(255,96,96,0.1)",padding:"2px 9px",borderRadius:20,border:"1px solid rgba(255,96,96,0.2)"}}>🔴 LIVE Threads</span>
+            : <span style={{fontSize:9,fontWeight:700,color:"#4A5570",background:"rgba(168,192,255,0.06)",padding:"2px 9px",borderRadius:20,border:"1px solid rgba(168,192,255,0.1)"}}>◈ Примеры</span>
+          }
+          {lastFetch && <span style={{fontSize:8,color:"#4A5570"}}>{lastFetch.toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}</span>}
+          <button onClick={refreshPosts} disabled={fetching} style={{background:"none",border:"none",cursor:"pointer",color:"#4A5570",fontSize:12}}>{fetching?"⟳":"↻"}</button>
+        </div>
         <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#7888AA",lineHeight:1.5,marginBottom:16}}>
           Видишь залетевшую ветку — нажми <span style={{color:"#A8C0FF",fontWeight:600}}>🔀 Ремикс</span> и получи её переписанной через душу персонажа
         </div>
