@@ -19,7 +19,7 @@ const KEYWORDS = [
 
 async function searchThreads(keyword, token) {
   try {
-    const url = `${BASE}/threads/keyword/search?keyword=${encodeURIComponent(keyword)}&depth=1&token=${token}`;
+    const url = `${BASE}/threads/keyword/search?name=${encodeURIComponent(keyword)}&depth=1&token=${token}`;
     console.log("Fetching:", url.replace(token, "TOKEN_HIDDEN"));
 
     const res = await fetch(url);
@@ -33,24 +33,27 @@ async function searchThreads(keyword, token) {
 
     const data = await res.json();
     console.log("Data keys:", Object.keys(data));
-    console.log("Posts count:", (data?.data || data?.posts || []).length);
+    console.log("Posts count:", (data?.data || []).length);
 
-    return (data?.data || data?.posts || [])
-      .slice(0, 4)
-      .map(p => {
-        const text = p.caption?.text || p.text || "";
-        return {
-          id: p.pk || p.id || String(Date.now() + Math.random()),
-          author: `@${p.user?.username || "threads"}`,
-          postUrl: p.code ? `https://www.threads.net/@${p.user?.username}/post/${p.code}` : null,
-          text: text.trim(),
-          likes: p.like_count || 0,
-          replies: p.text_post_app_info?.direct_reply_count || 0,
-          keyword,
-          viral: Math.min(99, 60 + Math.floor((p.like_count || 0) / 100)),
-          source: "threads_live",
-        };
-      }).filter(p => p.text.length > 30);
+    const posts = data?.data || [];
+
+    return posts.slice(0, 4).map(p => {
+      const text = p.thread_items?.[0]?.post?.caption?.text || p.caption?.text || p.text || "";
+      const post = p.thread_items?.[0]?.post || p;
+      const username = post?.user?.username || "threads";
+      const code = post?.code || "";
+      return {
+        id: post?.pk || String(Date.now() + Math.random()),
+        author: `@${username}`,
+        postUrl: code ? `https://www.threads.net/@${username}/post/${code}` : `https://www.threads.net/@${username}`,
+        text: text.trim(),
+        likes: post?.like_count || 0,
+        replies: post?.text_post_app_info?.direct_reply_count || 0,
+        keyword,
+        viral: Math.min(99, 60 + Math.floor((post?.like_count || 0) / 100)),
+        source: "threads_live",
+      };
+    }).filter(p => p.text.length > 30);
 
   } catch (e) {
     console.log("Fetch exception:", e.message);
