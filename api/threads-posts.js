@@ -37,20 +37,26 @@ async function searchThreads(keyword, token) {
 
     const posts = data?.data || [];
 
-    return posts.slice(0, 4).map(p => {
-      const text = p.thread_items?.[0]?.post?.caption?.text || p.caption?.text || p.text || "";
-      const post = p.thread_items?.[0]?.post || p;
+    return posts.slice(0, 4).map(item => {
+      const thread = item?.node?.thread || item;
+      const post = thread?.thread_items?.[0]?.post || thread;
+      const text = post?.caption?.text || post?.text || "";
       const username = post?.user?.username || "threads";
       const code = post?.code || "";
+      const likes = post?.like_count || 0;
+      const replies = post?.text_post_app_info?.direct_reply_count || 0;
+
       return {
         id: post?.pk || String(Date.now() + Math.random()),
         author: `@${username}`,
-        postUrl: code ? `https://www.threads.net/@${username}/post/${code}` : `https://www.threads.net/@${username}`,
+        postUrl: code
+          ? `https://www.threads.net/@${username}/post/${code}`
+          : `https://www.threads.net/@${username}`,
         text: text.trim(),
-        likes: post?.like_count || 0,
-        replies: post?.text_post_app_info?.direct_reply_count || 0,
+        likes,
+        replies,
         keyword,
-        viral: Math.min(99, 60 + Math.floor((post?.like_count || 0) / 100)),
+        viral: Math.min(99, 60 + Math.floor(likes / 100)),
         source: "threads_live",
       };
     }).filter(p => p.text.length > 30);
