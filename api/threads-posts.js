@@ -19,7 +19,7 @@ const KEYWORDS = [
 
 async function searchThreads(keyword, token) {
   try {
-    const url = `${BASE}/threads/post/search?keyword=${encodeURIComponent(keyword)}&token=${token}&max_depth=1`;
+    const url = `${BASE}/threads/keyword/search?keyword=${encodeURIComponent(keyword)}&depth=1&token=${token}`;
     console.log("Fetching:", url.replace(token, "TOKEN_HIDDEN"));
 
     const res = await fetch(url);
@@ -74,6 +74,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   console.log("ENSEMBLEDATA_TOKEN exists:", !!process.env.ENSEMBLEDATA_TOKEN);
   console.log("Token value:", process.env.ENSEMBLEDATA_TOKEN?.slice(0, 8) + "...");
+  console.log("Testing EnsembleData endpoint...");
   const token = process.env.ENSEMBLEDATA_TOKEN;
   if (!token) return res.status(200).json({ posts: getFallback(), source: "fallback" });
   const keywords = KEYWORDS.sort(() => Math.random() - 0.5).slice(0, 3);
