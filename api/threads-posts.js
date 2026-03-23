@@ -83,20 +83,23 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const token = process.env.ENSEMBLEDATA_TOKEN;
+  if (!token) return res.status(200).json({ posts: getFallback(), source: "fallback" });
 
-  try {
-    const url = `https://ensembledata.com/apis/threads/keyword/search?name=travel&depth=1&token=${token}`;
-    const r = await fetch(url);
-    const d = await r.json();
+  const keywords = KEYWORDS.sort(() => Math.random() - 0.5).slice(0, 3);
+  const results = await Promise.allSettled(keywords.map(k => searchThreads(k, token)));
 
-    // Return raw response so we can see exact structure
-    return res.status(200).json({
-      debug: true,
-      status: r.status,
-      tokenExists: !!token,
-      rawResponse: d
-    });
-  } catch(e) {
-    return res.status(200).json({ error: e.message });
+  const posts = results
+    .flatMap(r => r.status === "fulfilled" ? r.value : [])
+    .sort((a, b) => b.viral - a.viral)
+    .slice(0, 12);
+
+  if (posts.length === 0) {
+    return res.status(200).json({ posts: getFallback(), source: "fallback" });
   }
+
+  return res.status(200).json({
+    posts,
+    source: "threads_live",
+    fetchedAt: new Date().toISOString(),
+  });
 }
