@@ -1887,6 +1887,18 @@ function RemixTab({ persona }) {
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(168,192,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>@</div>
                     <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#7888AA"}}>{post.author}</span>
+                    {post.source === "threads_live" && (
+                      <a
+                        href={`https://www.threads.net/${post.author.replace("@","")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#A8C0FF",opacity:0.7,textDecoration:"none",border:"1px solid rgba(168,192,255,0.2)",borderRadius:6,padding:"1px 6px",transition:"opacity .15s"}}
+                        onMouseOver={e=>e.currentTarget.style.opacity="1"}
+                        onMouseOut={e=>e.currentTarget.style.opacity="0.7"}
+                      >
+                        открыть ↗
+                      </a>
+                    )}
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     {post.viral && (
