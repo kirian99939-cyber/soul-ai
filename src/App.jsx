@@ -1021,8 +1021,9 @@ function StudioTab({persona, onSave}) {
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2200,messages:[{role:"user",content:buildPrompt(persona,{formats,topics},ctx,num)}]}),
       });
       const d = await r.json();
+      if (d.error) { console.error("Anthropic API error:", d.error); setGenning(false); return; }
       const txt = d.content?.map(i=>i.text||"").join("")||"";
-      setPosts(JSON.parse(txt.replace(/```json|```/g,"").trim()));
+      setPosts(JSON.parse(txt.replace(/```json/g,"").replace(/```/g,"").trim()));
     } catch(e){setPosts([{text:"Ошибка: "+e.message,format:"",topic:"",tag:"",why:""}]);}
     setGenning(false);
   };
@@ -1035,7 +1036,8 @@ function StudioTab({persona, onSave}) {
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:`Ты — ${persona.name}. Пост: "${txt}"\n\n4 комментария разных людей + ответ ${persona.name.split(" ")[0]} на каждый (честный, провокационный).\nJSON: [{"comment":"...","user":"...","reply":"..."}]`}]}),
       });
       const d = await r.json();
-      setReplies(JSON.parse((d.content?.map(i=>i.text||"").join("")||"").replace(/```json|```/g,"").trim()));
+      if (d.error) { console.error("Anthropic API error:", d.error); setGenRep(false); return; }
+      setReplies(JSON.parse((d.content?.map(i=>i.text||"").join("")||"").replace(/```json/g,"").replace(/```/g,"").trim()));
     } catch(e){setReplies([]);}
     setGenRep(false);
   };
@@ -1246,13 +1248,20 @@ ${ptB}
     setGenning(true); setArc([]); setSelDay(null);
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST", headers:{"Content-Type":"application/json"},
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
         body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:3000,
           messages:[{role:"user", content:buildArcPrompt()}] }),
       });
       const d = await r.json();
+      if (d.error) { console.error("Anthropic API error:", d.error); setGenning(false); return; }
       const txt = d.content?.map(i=>i.text||"").join("")||"";
-      setArc(JSON.parse(txt.replace(/```json|```/g,"").trim()));
+      setArc(JSON.parse(txt.replace(/```json/g,"").replace(/```/g,"").trim()));
     } catch(e) { console.error(e); }
     setGenning(false);
   };
