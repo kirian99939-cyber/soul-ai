@@ -1037,6 +1037,8 @@ function StudioTab({persona, onSave}) {
   const [selPost,  setSelPost]  = useState(null);
   const [replies,  setReplies]  = useState([]);
   const [genRep,   setGenRep]   = useState(false);
+  const [photos,   setPhotos]   = useState({});
+  const [genPhoto, setGenPhoto] = useState(null);
   const [trendSrc, setTrendSrc] = useState("internal"); // "internal" | "live"
 
   const { trends: liveTrends, loading: trendsLoading, fetchedAt, refresh: refreshTrends } = useTrends();
@@ -1088,6 +1090,20 @@ function StudioTab({persona, onSave}) {
       setReplies(JSON.parse((d.content?.map(i=>i.text||"").join("")||"").replace(/```json|```/g,"").trim()));
     } catch(e){setReplies([]);}
     setGenRep(false);
+  };
+
+  const generatePhoto = async (postIndex, postText) => {
+    setGenPhoto(postIndex);
+    try {
+      const r = await fetch("/api/generate-photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postText, persona }),
+      });
+      const d = await r.json();
+      if(d.imageUrl) setPhotos(prev => ({ ...prev, [postIndex]: d.imageUrl }));
+    } catch(e) { console.error(e); }
+    setGenPhoto(null);
   };
 
   return (
@@ -1232,6 +1248,15 @@ function StudioTab({persona, onSave}) {
             </div>
             <div style={{...serif(15.5,C.ink),lineHeight:1.8,whiteSpace:"pre-line"}}>{p.text}</div>
             {p.why&&<div style={{...u(9.5,C.muted),padding:"6px 10px",background:"rgba(59,111,255,0.04)",borderRadius:8,borderLeft:`2px solid rgba(59,111,255,0.3)`,marginTop:8}}>💡 {p.why}</div>}
+            {photos[i] && (
+              <img src={photos[i]} alt="generated" style={{width:"100%", borderRadius:12, marginTop:10, display:"block"}}/>
+            )}
+            <button
+              onClick={() => generatePhoto(i, p.text)}
+              disabled={genPhoto === i}
+              style={{marginTop:8, width:"100%", background:"rgba(168,192,255,0.08)", border:"1px solid rgba(168,192,255,0.2)", borderRadius:10, padding:"8px", color: genPhoto===i ? "#4A5570" : "#A8C0FF", fontFamily:"'DM Sans',sans-serif", fontSize:11, fontWeight:600, cursor: genPhoto===i ? "wait" : "pointer"}}>
+              {genPhoto === i ? "⟳ Генерирую фото..." : "📸 Сгенерировать фото"}
+            </button>
             <button onClick={()=>{setSelPost(selPost===i?null:i);if(selPost!==i){setReplies([]);genReplies(p.text);}}}
               style={{...u(9,C.teal),background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.15)",borderRadius:7,padding:"4px 12px",cursor:"pointer",marginTop:8}}>
               💬 {selPost===i?"скрыть":"смоделировать ответы"}
