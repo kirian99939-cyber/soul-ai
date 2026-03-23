@@ -26,15 +26,21 @@ async function searchThreads(keyword, token) {
     const posts = data?.data || data?.posts || [];
     return posts.slice(0, 4).map(p => {
       const text = p.caption?.text || p.text || "";
+      const likes = p.like_count || 0;
+      const replies = p.text_post_app_info?.direct_reply_count || 0;
+      const postCode = p.code || p.shortcode || p.pk || p.id || "";
+      const username = p.user?.username || "threads";
       return {
         id: p.pk || p.id || String(Date.now() + Math.random()),
-        author: `@${p.user?.username || "threads"}`,
+        author: `@${username}`,
+        postUrl: postCode ? `https://www.threads.net/@${username}/post/${postCode}` : `https://www.threads.net/@${username}`,
         text: text.trim(),
-        likes: p.like_count || 0,
-        replies: p.text_post_app_info?.direct_reply_count || 0,
+        likes,
+        replies,
         keyword,
-        viral: Math.min(99, 60 + Math.floor((p.like_count || 0) / 100)),
+        viral: Math.min(99, 50 + Math.floor((likes / 100) * 10) + Math.floor(replies / 5)),
         source: "threads_live",
+        fetchedAt: new Date().toISOString(),
       };
     }).filter(p => p.text.length > 30);
   } catch (e) {
