@@ -93,7 +93,7 @@ export default async function handler(req, res) {
     for(let i = 0; i < 40; i++) {
       await new Promise(r => setTimeout(r, 5000));
 
-      const pollRes = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/task/${taskId}`, {
+      const pollRes = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/task-detail?taskId=${taskId}`, {
         headers: { "Authorization": `Bearer ${process.env.NANOBANANA_API_KEY}` }
       });
 
