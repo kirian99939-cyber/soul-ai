@@ -78,35 +78,41 @@ export default async function handler(req, res) {
       console.error("NanoBanana error:", JSON.stringify(submitData));
       return res.status(500).json({ error: "NanoBanana failed", details: submitData });
     }
-    const taskId = submitData.task_id || submitData.id || submitData.taskId;
+    const taskId = submitData?.data?.taskId;
+    console.log("TaskId:", taskId);
 
-    if(!taskId) return res.status(500).json({ error: "No task_id returned", raw: submitData });
+    if(!taskId) {
+      return res.status(500).json({ error: "No taskId", raw: submitData });
+    }
 
-    // Step 2: poll for result (max 30s)
-    console.log("Polling taskId:", taskId);
-    for(let i = 0; i < 15; i++) {
-      await new Promise(r => setTimeout(r, 2000));
+    // Poll for result
+    for(let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 3000));
 
       const pollRes = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/task/${taskId}`, {
-        headers: { "Authorization": `Bearer ${key}` },
+        headers: { "Authorization": `Bearer ${process.env.NANOBANANA_API_KEY}` }
       });
-      console.log("Poll status:", pollRes.status);
 
-      if(!pollRes.ok) continue;
+      console.log(`Poll ${i+1} status:`, pollRes.status);
       const pollData = await pollRes.json();
-      console.log("Poll response:", JSON.stringify(pollData).slice(0, 300));
+      console.log(`Poll ${i+1} response:`, JSON.stringify(pollData).slice(0, 300));
 
-      const status = pollData.status || pollData.state;
-      if(status === "completed" || status === "done" || status === "success") {
-        const imageUrl = pollData.image_url || pollData.output?.[0] || pollData.result?.image_url;
-        if(imageUrl) return res.status(200).json({ imageUrl, prompt, photoType });
+      const status = pollData?.data?.status || pollData?.status;
+      const imageUrl = pollData?.data?.imageUrl || pollData?.data?.output || pollData?.data?.image_url;
+
+      if(imageUrl) {
+        console.log("Got image:", imageUrl);
+        return res.status(200).json({ imageUrl });
       }
+
       if(status === "failed" || status === "error") {
         return res.status(500).json({ error: "Generation failed", raw: pollData });
       }
+
+      console.log(`Poll ${i+1} status value:`, status, "- waiting...");
     }
 
-    return res.status(408).json({ error: "Timeout — task still processing", taskId });
+    return res.status(408).json({ error: "Timeout", taskId });
 
   } catch(e) {
     console.error("generate-photo error:", e.message, e.stack);
