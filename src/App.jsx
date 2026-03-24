@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { loadData, saveData, saveReferencePhotos, loadReferencePhotos } from "./supabase.js";
+import { supabase, loadData, saveData, saveReferencePhotos, loadReferencePhotos } from "./supabase.js";
 
 // ═══════════════════════════════════════════════════════
 //  SOUL AI v3  |  Multi-Soul Content Engine
@@ -921,30 +921,33 @@ function SoulEditor({persona, onChange}) {
               onChange={async e => {
                 const files = Array.from(e.target.files).slice(0, 8 - (persona.referencePhotos||[]).length);
 
-                const toBase64 = f => new Promise((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onload = () => resolve(reader.result);
-                  reader.onerror = reject;
-                  reader.readAsDataURL(f);
-                });
-
                 try {
-                  const newPhotos = await Promise.all(files.map(toBase64));
-                  const updated = [...(persona.referencePhotos||[]), ...newPhotos];
+                  const uploadedUrls = await Promise.all(files.map(async file => {
+                    const ext = file.name.split(".").pop();
+                    const path = `ref-photos/${persona.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-                  // Update local state
+                    const { data, error } = await supabase.storage
+                      .from("persona-photos")
+                      .upload(path, file, { upsert: true });
+
+                    if(error) { console.error("Upload error:", error); return null; }
+
+                    const { data: urlData } = supabase.storage
+                      .from("persona-photos")
+                      .getPublicUrl(path);
+
+                    return urlData.publicUrl;
+                  }));
+
+                  const newUrls = uploadedUrls.filter(Boolean);
+                  const updated = [...(persona.referencePhotos||[]), ...newUrls];
                   onChange("referencePhotos", updated);
-
-                  // Save to Supabase
-                  saveData("ref_photos_" + persona.id, updated)
-                    .then(() => console.log("Reference photos saved:", updated.length))
-                    .catch(e => console.error("Save error:", e));
+                  saveData("ref_photos_" + persona.id, updated).catch(console.error);
 
                 } catch(e) {
-                  console.error("File read error:", e);
+                  console.error("Upload error:", e);
                 }
 
-                // Reset input so same files can be re-selected
                 e.target.value = "";
               }}
             />
