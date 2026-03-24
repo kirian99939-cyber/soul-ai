@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { loadData, saveData } from "./supabase.js";
+import { loadData, saveData, saveReferencePhotos, loadReferencePhotos } from "./supabase.js";
 
 // ═══════════════════════════════════════════════════════
 //  SOUL AI v3  |  Multi-Soul Content Engine
@@ -2279,8 +2279,15 @@ export default function PersonaOS() {
         const savedContent  = cr.status==="fulfilled"&&cr.value ? cr.value : null;
 
         if(savedPersonas?.length) {
-          setPersonas(savedPersonas);
-          setSelId(savedPersonas[0].id);
+          // Load reference photos for each persona
+          const personasWithPhotos = await Promise.all(
+            savedPersonas.map(async p => {
+              const photos = await loadReferencePhotos(p.id);
+              return photos ? {...p, referencePhotos: photos} : p;
+            })
+          );
+          setPersonas(personasWithPhotos);
+          setSelId(personasWithPhotos[0].id);
         } else {
           // Seed with Lera
           const lera = {
@@ -2538,7 +2545,10 @@ export default function PersonaOS() {
             {/* Content */}
             <div style={{flex:1,overflowY:"auto",padding:"20px 28px 60px"}}>
               <div style={{maxWidth:920,margin:"0 auto",animation:"fadeUp .35s ease"}}>
-                {tab==="soul"    && <SoulEditor key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/>}
+                {tab==="soul"    && <SoulEditor key={sel.id} persona={sel} onChange={async (k,v)=>{
+                  if(k==="referencePhotos") await saveReferencePhotos(sel.id, v);
+                  updatePersona(sel.id,k,v);
+                }}/>}
                 {tab==="mind"    && <MindTab    key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/>}
                 {tab==="arc"     && <ArcTab     key={sel.id} persona={sel} onSave={saveContent}/>}
                 {tab==="studio"  && <StudioTab  key={sel.id} persona={sel} onSave={saveContent}/> }

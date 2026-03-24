@@ -36,3 +36,11 @@ export async function saveData(key, value) {
   }
   localStorage.setItem(key, json)
 }
+
+export async function saveReferencePhotos(personaId, photos) {
+  return saveData(`ref_photos_${personaId}`, photos);
+}
+
+export async function loadReferencePhotos(personaId) {
+  return loadData(`ref_photos_${personaId}`);
+}
