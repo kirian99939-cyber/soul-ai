@@ -2289,20 +2289,32 @@ export default function PersonaOS() {
   // ── LOAD ─────────────────────────────────────────────
   useEffect(()=>{
     (async()=>{
+      console.log("=== Loading personas ===");
       try {
         const [pr,cr] = await Promise.allSettled([
-          loadData("os_personas"),
-          loadData("os_content"),
+          Promise.race([loadData("os_personas"), new Promise(r => setTimeout(()=>r(null), 5000))]),
+          Promise.race([loadData("os_content"),  new Promise(r => setTimeout(()=>r(null), 5000))]),
         ]);
+
+        console.log("Personas result:", pr.status, !!pr.value);
+        console.log("Content result:", cr.status, !!cr.value);
+
         const savedPersonas = pr.status==="fulfilled"&&pr.value ? pr.value : null;
         const savedContent  = cr.status==="fulfilled"&&cr.value ? cr.value : null;
 
         if(savedPersonas?.length) {
-          // Load reference photos for each persona
+          // Load reference photos with timeout
           const personasWithPhotos = await Promise.all(
             savedPersonas.map(async p => {
-              const photos = await loadReferencePhotos(p.id);
-              return photos ? {...p, referencePhotos: photos} : p;
+              try {
+                const photos = await Promise.race([
+                  loadData("ref_photos_" + p.id),
+                  new Promise(r => setTimeout(()=>r(null), 3000))
+                ]);
+                return photos ? {...p, referencePhotos: photos} : p;
+              } catch(e) {
+                return p;
+              }
             })
           );
           setPersonas(personasWithPhotos);
@@ -2321,7 +2333,8 @@ export default function PersonaOS() {
           setPersonas([lera]); setSelId(lera.id);
         }
         if(savedContent?.length) setContent(savedContent);
-      } catch(e){ console.log("Storage init:",e); }
+      } catch(e){ console.error("Load error:",e); }
+      console.log("=== setLoaded(true) ===");
       setLoaded(true);
     })();
   },[]);
