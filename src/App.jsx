@@ -1410,7 +1410,7 @@ function StudioTab({persona, onSave}) {
               <img
                 src={photos[i][selectedPhoto[i] || 0]}
                 alt="generated"
-                style={{width:"100%",maxHeight:320,objectFit:"cover",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)",cursor:"pointer"}}
+                style={{width:"100%",objectFit:"contain",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)",background:"rgba(168,192,255,0.03)",maxHeight:400,cursor:"pointer"}}
                 onClick={()=>window.open(photos[i][selectedPhoto[i] || 0], "_blank")}
               />
               {/* Миниатюры */}
@@ -1421,7 +1421,7 @@ function StudioTab({persona, onSave}) {
                       style={{width:64,height:64,borderRadius:8,overflow:"hidden",cursor:"pointer",flexShrink:0,
                         border:`2px solid ${(selectedPhoto[i]||0)===pi?"#A8C0FF":"transparent"}`,
                         opacity:(selectedPhoto[i]||0)===pi?1:0.55,transition:"all .15s"}}>
-                      <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      <img src={url} style={{width:"100%",height:"100%",objectFit:"contain",background:"rgba(168,192,255,0.03)"}}/>
                     </div>
                   ))}
                   {/* Плейсхолдеры для ещё не готовых фото */}
@@ -1930,7 +1930,7 @@ ${ptB}
                 {arcPhotos[selDay]?.length > 0 && (
                   <div style={{padding:"0 18px 12px"}}>
                     <img src={arcPhotos[selDay][arcSelectedPhoto[selDay]||0]} alt="arc photo"
-                      style={{width:"100%",maxHeight:280,objectFit:"cover",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)"}}/>
+                      style={{width:"100%",objectFit:"contain",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)",background:"rgba(168,192,255,0.03)",maxHeight:400}}/>
                     {arcPhotos[selDay].length > 1 && (
                       <div style={{display:"flex",gap:5,marginTop:6}}>
                         {arcPhotos[selDay].map((url,pi)=>(
@@ -1938,7 +1938,7 @@ ${ptB}
                             style={{width:48,height:48,borderRadius:7,overflow:"hidden",cursor:"pointer",
                               border:`2px solid ${(arcSelectedPhoto[selDay]||0)===pi?"#A8C0FF":"transparent"}`,
                               opacity:(arcSelectedPhoto[selDay]||0)===pi?1:0.5}}>
-                            <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            <img src={url} style={{width:"100%",height:"100%",objectFit:"contain",background:"rgba(168,192,255,0.03)"}}/>
                           </div>
                         ))}
                       </div>
@@ -2307,7 +2307,7 @@ function RemixTab({ persona }) {
                   {remixPhotos[post.id]?.length > 0 && (
                     <div style={{marginTop:10}}>
                       <img src={remixPhotos[post.id][remixSelectedPhoto[post.id]||0]} alt="photo"
-                        style={{width:"100%",maxHeight:280,objectFit:"cover",borderRadius:10,display:"block",border:"1px solid rgba(168,192,255,0.1)"}}/>
+                        style={{width:"100%",objectFit:"contain",borderRadius:10,display:"block",border:"1px solid rgba(168,192,255,0.1)",background:"rgba(168,192,255,0.03)",maxHeight:400}}/>
                       {remixPhotos[post.id].length > 1 && (
                         <div style={{display:"flex",gap:5,marginTop:6}}>
                           {remixPhotos[post.id].map((url,pi)=>(
@@ -2315,7 +2315,7 @@ function RemixTab({ persona }) {
                               style={{width:48,height:48,borderRadius:7,overflow:"hidden",cursor:"pointer",
                                 border:`2px solid ${(remixSelectedPhoto[post.id]||0)===pi?"#A8C0FF":"transparent"}`,
                                 opacity:(remixSelectedPhoto[post.id]||0)===pi?1:0.5}}>
-                              <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              <img src={url} style={{width:"100%",height:"100%",objectFit:"contain",background:"rgba(168,192,255,0.03)"}}/>
                             </div>
                           ))}
                         </div>
