@@ -23,8 +23,6 @@ export default async function handler(req, res) {
     "overhead flat lay — bag contents, outfit pieces, travel items",
     "two women laughing together, candid moment with friend",
     "crowded market or street scene, woman in background",
-    "extreme action blur — motorcycle, jumping, running, movement",
-    "woman at unusual location — rooftop, cliff edge, inside cave, market",
     "night shot with city lights, woman silhouette or portrait",
   ];
 
@@ -38,7 +36,7 @@ export default async function handler(req, res) {
   if(t.includes("дорог") || t.includes("путешеств") || t.includes("улиц") || t.includes("город"))
     shotPool.push(...Array(3).fill("woman from behind walking on interesting street, travel vibes"));
   if(t.includes("страх") || t.includes("прыж") || t.includes("адренал") || t.includes("безум"))
-    shotPool.push(...Array(3).fill("extreme action shot, movement blur, woman doing something wild"));
+    shotPool.push(...Array(3).fill("woman in an adventurous moment, exciting setting, bold energy"));
   if(t.includes("природ") || t.includes("гор") || t.includes("лес") || t.includes("море"))
     shotPool.push(...Array(3).fill("woman in dramatic nature landscape, small figure big scenery"));
   if(t.includes("одна") || t.includes("соло") || t.includes("сама"))
@@ -82,7 +80,7 @@ export default async function handler(req, res) {
   const phoneStyle = "shot on iPhone, slight grain and noise, natural imperfect light, candid authentic moment, no filters, real person";
 
   const seasonTag = season || "spring, cool light, March Russia";
-  const prompt = `${preset}. ${scene}. Season: ${seasonTag}. ${phoneStyle}. ${visualCode ? visualCode + "." : ""} Vertical 4:5, photorealistic, no text.`;
+  const prompt = `${preset}. ${scene}. Season: ${seasonTag}. ${phoneStyle}. ${visualCode ? visualCode + "." : ""} Vertical 4:5, photorealistic, no text. IMPORTANT: no exotic animals, no scorpions, no motorcycles unless post explicitly mentions them.`;
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
 
   try {
