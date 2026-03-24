@@ -920,15 +920,32 @@ function SoulEditor({persona, onChange}) {
             <input type="file" accept="image/*" multiple style={{display:"none"}}
               onChange={async e => {
                 const files = Array.from(e.target.files).slice(0, 8 - (persona.referencePhotos||[]).length);
-                const toBase64 = f => new Promise(res => {
-                  const r = new FileReader();
-                  r.onload = () => res(r.result);
-                  r.readAsDataURL(f);
+
+                const toBase64 = f => new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(f);
                 });
-                const newPhotos = await Promise.all(files.map(toBase64));
-                const updated = [...(persona.referencePhotos||[]), ...newPhotos];
-                onChange("referencePhotos", updated);
-                saveData("ref_photos_" + persona.id, updated).catch(e => console.error("Save ref photos error:", e));
+
+                try {
+                  const newPhotos = await Promise.all(files.map(toBase64));
+                  const updated = [...(persona.referencePhotos||[]), ...newPhotos];
+
+                  // Update local state
+                  onChange("referencePhotos", updated);
+
+                  // Save to Supabase
+                  saveData("ref_photos_" + persona.id, updated)
+                    .then(() => console.log("Reference photos saved:", updated.length))
+                    .catch(e => console.error("Save error:", e));
+
+                } catch(e) {
+                  console.error("File read error:", e);
+                }
+
+                // Reset input so same files can be re-selected
+                e.target.value = "";
               }}
             />
           </label>
