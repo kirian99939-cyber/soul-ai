@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona } = req.body || {};
+  const { postText, persona, season } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
@@ -81,7 +81,8 @@ export default async function handler(req, res) {
   const visualCode = persona?.soul?.visualCode || "";
   const phoneStyle = "shot on iPhone, slight grain and noise, natural imperfect light, candid authentic moment, no filters, real person";
 
-  const prompt = `${preset}. ${scene}. ${phoneStyle}. ${visualCode ? visualCode + "." : ""} Vertical 4:5, photorealistic, no text.`;
+  const seasonTag = season || "spring, cool light, March Russia";
+  const prompt = `${preset}. ${scene}. Season: ${seasonTag}. ${phoneStyle}. ${visualCode ? visualCode + "." : ""} Vertical 4:5, photorealistic, no text.`;
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
 
   try {

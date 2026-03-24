@@ -231,6 +231,9 @@ ${s.contentCode ? `КОД КОНТЕНТА: ${s.contentCode}` : ""}
 
 Каждый пост должен соответствовать этому ДНК.
 
+ТЕКУЩАЯ ДАТА: ${new Date().toLocaleDateString("ru", {day:"numeric", month:"long", year:"numeric"})}
+СЕЗОН: ${getSeason()} — учитывай в деталях постов (одежда, погода, настроение)
+
 СОСТОЯНИЕ:
 Настроение: ${st.mood}%, Энергия: ${st.energy}%, Уверенность: ${st.confidence}%, Тревога: ${st.anxiety}%, Креативность: ${st.creativity}%
 
@@ -1160,6 +1163,22 @@ function MindTab({persona, onChange}) {
 }
 
 // ── STUDIO TAB ───────────────────────────────────────────
+function getSeason() {
+  const m = new Date().getMonth();
+  if(m >= 2 && m <= 4) return "весна";
+  if(m >= 5 && m <= 7) return "лето";
+  if(m >= 8 && m <= 10) return "осень";
+  return "зима";
+}
+
+function getSeasonVisual() {
+  const m = new Date().getMonth();
+  if(m >= 2 && m <= 4) return "spring, bare trees or first leaves, possible snow remains, cool light, March-May Russia";
+  if(m >= 5 && m <= 7) return "summer, green trees, warm golden light, long days";
+  if(m >= 8 && m <= 10) return "autumn, yellow and orange leaves, soft light, September-November";
+  return "winter, snow, bare trees, cold blue light, December-February Russia";
+}
+
 function StudioTab({persona, onSave, onSavePhoto}) {
   const [niches,   setNiches]   = useState(persona.niches  || ["fashion","travel","self"]);
   const [formats,  setFormats]  = useState(persona.formats || ["story","hot","reply","vuln"]);
@@ -1173,6 +1192,7 @@ function StudioTab({persona, onSave, onSavePhoto}) {
   const [photos,   setPhotos]   = useState({}); // {index: [url1, url2, url3]}
   const [selectedPhoto, setSelectedPhoto] = useState({}); // {index: 0}
   const [genPhoto, setGenPhoto] = useState(null);
+  const [dayPulse, setDayPulse] = useState({ weather:"" });
   const [photoCount, setPhotoCount] = useState(3);
   const [trendSrc, setTrendSrc] = useState("internal"); // "internal" | "live"
 
@@ -1246,7 +1266,7 @@ function StudioTab({persona, onSave, onSavePhoto}) {
         fetch("/api/start-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postText, persona }),
+          body: JSON.stringify({ postText, persona, season: getSeasonVisual() }),
         }).then(r => r.json())
       ));
 
@@ -1300,6 +1320,29 @@ function StudioTab({persona, onSave, onSavePhoto}) {
 
   return (
     <div>
+      {/* Day pulse */}
+      <div style={{background:"rgba(168,192,255,0.04)",borderRadius:14,padding:"12px 16px",border:"1px solid rgba(168,192,255,0.1)",marginBottom:10,display:"flex",gap:16,alignItems:"center",flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:14}}>📅</span>
+          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#C8D4F0"}}>
+            {new Date().toLocaleDateString("ru",{day:"numeric",month:"long"})}
+          </span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:14}}>{getSeason()==="зима"?"❄️":getSeason()==="весна"?"🌱":getSeason()==="лето"?"☀️":"🍂"}</span>
+          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#C8D4F0",textTransform:"capitalize"}}>{getSeason()}</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
+          <span style={{fontSize:14}}>🌤</span>
+          <input
+            value={dayPulse?.weather||""}
+            onChange={e=>setDayPulse(prev=>({...prev,weather:e.target.value}))}
+            placeholder="Погода сейчас..."
+            style={{background:"transparent",border:"none",outline:"none",fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#C8D4F0",width:"100%"}}
+          />
+        </div>
+      </div>
+
       {/* Header card */}
       <div style={{
         background:`radial-gradient(ellipse at 15% 50%, ${aura.c1}15 0%, transparent 55%), rgba(255,255,255,0.03)`,
@@ -1596,7 +1639,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
         fetch("/api/start-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postText, persona }),
+          body: JSON.stringify({ postText, persona, season: getSeasonVisual() }),
         }).then(r => r.json())
       ));
       const taskIds = starts.map(s => s.taskId).filter(Boolean);
@@ -1663,6 +1706,9 @@ ${soul.manifesto ? `МАНИФЕСТ: ${soul.manifesto}` : ""}
 ${soul.audience ? `АУДИТОРИЯ: ${soul.audience}` : ""}
 ${soul.contentStrategy ? `СТРАТЕГИЯ: ${soul.contentStrategy}` : ""}
 ${soul.contentCode ? `КОД КОНТЕНТА: ${soul.contentCode}` : ""}
+
+ТЕКУЩАЯ ДАТА: ${new Date().toLocaleDateString("ru", {day:"numeric", month:"long", year:"numeric"})}
+СЕЗОН: ${getSeason()} — учитывай в деталях (одежда, погода, настроение)
 
 ТЕКУЩЕЕ СОСТОЯНИЕ (Точка А):
 ${ptA}
@@ -2184,7 +2230,7 @@ function RemixTab({ persona, onSavePhoto }) {
         fetch("/api/start-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postText, persona }),
+          body: JSON.stringify({ postText, persona, season: getSeasonVisual() }),
         }).then(r => r.json())
       ));
       const taskIds = starts.map(s => s.taskId).filter(Boolean);
