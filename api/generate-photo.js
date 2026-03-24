@@ -41,6 +41,9 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
   if(req.method !== "POST") return res.status(405).end();
 
+  console.log("NANOBANANA_API_KEY exists:", !!process.env.NANOBANANA_API_KEY);
+  console.log("Request body:", JSON.stringify(req.body).slice(0, 200));
+
   const key = process.env.NANOBANANA_API_KEY;
   if(!key) return res.status(400).json({ error: "No NANOBANANA_API_KEY" });
 
@@ -101,6 +104,7 @@ export default async function handler(req, res) {
     return res.status(408).json({ error: "Timeout — task still processing", taskId });
 
   } catch(e) {
+    console.error("generate-photo error:", e.message, e.stack);
     return res.status(500).json({ error: e.message });
   }
 }
