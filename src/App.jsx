@@ -920,33 +920,37 @@ function SoulEditor({persona, onChange}) {
             <input type="file" accept="image/*" multiple style={{display:"none"}}
               onChange={async e => {
                 const files = Array.from(e.target.files).slice(0, 8 - (persona.referencePhotos||[]).length);
+                if(!files.length) return;
 
-                try {
-                  const uploadedUrls = await Promise.all(files.map(async file => {
-                    const ext = file.name.split(".").pop();
-                    const path = `ref-photos/${persona.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                const results = await Promise.all(files.map(async file => {
+                  // Try Supabase Storage first
+                  if(supabase) {
+                    try {
+                      const ext = file.name.split(".").pop();
+                      const path = `ref-photos/${persona.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                      const { error } = await supabase.storage.from("persona-photos").upload(path, file, { upsert: true });
+                      if(!error) {
+                        const { data } = supabase.storage.from("persona-photos").getPublicUrl(path);
+                        return data.publicUrl;
+                      }
+                    } catch(e) {
+                      console.warn("Supabase Storage failed, using base64:", e.message);
+                    }
+                  }
+                  // Fallback to base64
+                  return new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(file);
+                  });
+                }));
 
-                    const { data, error } = await supabase.storage
-                      .from("persona-photos")
-                      .upload(path, file, { upsert: true });
-
-                    if(error) { console.error("Upload error:", error); return null; }
-
-                    const { data: urlData } = supabase.storage
-                      .from("persona-photos")
-                      .getPublicUrl(path);
-
-                    return urlData.publicUrl;
-                  }));
-
-                  const newUrls = uploadedUrls.filter(Boolean);
-                  const updated = [...(persona.referencePhotos||[]), ...newUrls];
-                  onChange("referencePhotos", updated);
-                  saveData("ref_photos_" + persona.id, updated).catch(console.error);
-
-                } catch(e) {
-                  console.error("Upload error:", e);
-                }
+                const updated = [...(persona.referencePhotos||[]), ...results.filter(Boolean)];
+                onChange("referencePhotos", updated);
+                saveData("ref_photos_" + persona.id, updated.map(url =>
+                  url.startsWith("data:") ? url.slice(0, 100) + "..." : url
+                )).catch(console.error);
+                localStorage.setItem("ref_photos_" + persona.id, JSON.stringify(updated));
 
                 e.target.value = "";
               }}
