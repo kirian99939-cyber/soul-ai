@@ -1532,10 +1532,13 @@ function ArcTab({ persona, onSave }) {
   const [saved,  setSaved]  = useState({});
   const [arcPhotos, setArcPhotos] = useState({});
   const [arcSelectedPhoto, setArcSelectedPhoto] = useState({});
-  const [genArcPhoto, setGenArcPhoto] = useState(null);
+  const [genArcPhoto, setGenArcPhoto] = useState({});
 
-  const generateArcPhoto = async (dayIndex, postText) => {
-    setGenArcPhoto(dayIndex);
+  const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
+
+  const generateArcPhoto = async (arcId, dayIndex, postText) => {
+    const key = photoKey(arcId, dayIndex);
+    setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
       const starts = await Promise.all(Array.from({length:3}).map(() =>
         fetch("/api/start-photo", {
@@ -1555,16 +1558,16 @@ function ArcTab({ persona, onSave }) {
         if(data.imageUrl) {
           results_[i] = data.imageUrl;
           resolved++;
-          if(resolved === 1) setGenArcPhoto(null);
-          setArcPhotos(prev => ({ ...prev, [dayIndex]: results_.filter(Boolean) }));
-          setArcSelectedPhoto(prev => ({ ...prev, [dayIndex]: 0 }));
+          if(resolved === 1) setGenArcPhoto(prev => ({...prev, [key]: false}));
+          setArcPhotos(prev => ({ ...prev, [key]: results_.filter(Boolean) }));
+          setArcSelectedPhoto(prev => ({ ...prev, [key]: 0 }));
         } else if(data.status !== "failed") {
           await pollTask(taskId, i, attempt + 1);
         }
       };
       await Promise.all(taskIds.map((id, i) => pollTask(id, i)));
     } catch(e) { console.error(e); }
-    setGenArcPhoto(null);
+    setGenArcPhoto(prev => ({...prev, [key]: false}));
   };
 
   useEffect(()=>{
@@ -1935,7 +1938,7 @@ ${ptB}
                         onSave({id:uid(),personaId:persona.id,platform:"threads",
                           text:d.post,format:d.format||"",topic:d.title||"",
                           tag:d.tag||"",why:`День ${d.day} арки: ${d.beat?.slice(0,60)}...`,
-                          imageUrl:arcPhotos[selDay]?.[arcSelectedPhoto[selDay]||0]||null,
+                          imageUrl:arcPhotos[photoKey(expandedArc,selDay)]?.[arcSelectedPhoto[photoKey(expandedArc,selDay)]||0]||null,
                           status:"draft",createdAt:now()});
                         setSaved(p=>({...p,[selDay]:true}));
                       }} style={{...u(9,isSaved?C.muted:C.bg,600),
@@ -1950,17 +1953,17 @@ ${ptB}
                 </div>
 
                 {/* Фото дня */}
-                {arcPhotos[selDay]?.length > 0 && (
+                {arcPhotos[photoKey(expandedArc,selDay)]?.length > 0 && (
                   <div style={{padding:"0 18px 12px"}}>
-                    <img src={arcPhotos[selDay][arcSelectedPhoto[selDay]||0]} alt="arc photo"
+                    <img src={arcPhotos[photoKey(expandedArc,selDay)][arcSelectedPhoto[photoKey(expandedArc,selDay)]||0]} alt="arc photo"
                       style={{width:"100%",objectFit:"contain",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)",background:"rgba(168,192,255,0.03)",maxHeight:400}}/>
-                    {arcPhotos[selDay].length > 1 && (
+                    {arcPhotos[photoKey(expandedArc,selDay)].length > 1 && (
                       <div style={{display:"flex",gap:5,marginTop:6}}>
-                        {arcPhotos[selDay].map((url,pi)=>(
-                          <div key={pi} onClick={()=>setArcSelectedPhoto(prev=>({...prev,[selDay]:pi}))}
+                        {arcPhotos[photoKey(expandedArc,selDay)].map((url,pi)=>(
+                          <div key={pi} onClick={()=>setArcSelectedPhoto(prev=>({...prev,[photoKey(expandedArc,selDay)]:pi}))}
                             style={{width:48,height:48,borderRadius:7,overflow:"hidden",cursor:"pointer",
-                              border:`2px solid ${(arcSelectedPhoto[selDay]||0)===pi?"#A8C0FF":"transparent"}`,
-                              opacity:(arcSelectedPhoto[selDay]||0)===pi?1:0.5}}>
+                              border:`2px solid ${(arcSelectedPhoto[photoKey(expandedArc,selDay)]||0)===pi?"#A8C0FF":"transparent"}`,
+                              opacity:(arcSelectedPhoto[photoKey(expandedArc,selDay)]||0)===pi?1:0.5}}>
                             <img src={url} style={{width:"100%",height:"100%",objectFit:"contain",background:"rgba(168,192,255,0.03)"}}/>
                           </div>
                         ))}
@@ -1968,11 +1971,11 @@ ${ptB}
                     )}
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
                       <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>
-                        📸 {arcPhotos[selDay].length} фото · NanoBanana Pro
+                        📸 {arcPhotos[photoKey(expandedArc,selDay)].length} фото · NanoBanana Pro
                       </span>
                       <button
                         onClick={async () => {
-                          const url = arcPhotos[selDay][arcSelectedPhoto[selDay]||0];
+                          const url = arcPhotos[photoKey(expandedArc,selDay)][arcSelectedPhoto[photoKey(expandedArc,selDay)]||0];
                           try {
                             const res = await fetch(url);
                             const blob = await res.blob();
@@ -1996,13 +1999,13 @@ ${ptB}
                 )}
 
                 <div style={{padding:"0 18px 10px"}}>
-                  <button onClick={()=>generateArcPhoto(selDay, arc[selDay]?.post)}
-                    disabled={genArcPhoto===selDay}
+                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post)}
+                    disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
-                      color:genArcPhoto===selDay?"#4A5570":"#FFD580",
+                      color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",
                       background:"rgba(255,213,128,0.08)",border:"1px solid rgba(255,213,128,0.2)",
-                      borderRadius:8,padding:"8px",cursor:genArcPhoto===selDay?"wait":"pointer"}}>
-                    {genArcPhoto===selDay?"⟳ Генерирую фото...":"📸 Сгенерировать фото к дню"}
+                      borderRadius:8,padding:"8px",cursor:genArcPhoto[photoKey(expandedArc,selDay)]?"wait":"pointer"}}>
+                    {genArcPhoto[photoKey(expandedArc,selDay)]?"⟳ Генерирую фото...":"📸 Сгенерировать фото к дню"}
                   </button>
                 </div>
 
