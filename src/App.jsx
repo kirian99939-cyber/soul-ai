@@ -908,35 +908,55 @@ function SoulEditor({persona, onChange}) {
         <Ed value={soul.catchphrases||""} onChange={v=>onChange("soul",{...soul,catchphrases:v})} style={{fontFamily:"'DM Sans',sans-serif",fontSize:11.5,color:"#C8D4F0",fontStyle:"italic"}} multi/>
       </div>
 
-      {/* ── REFERENCE PHOTOS ── */}
-      <div style={{background:"rgba(168,192,255,0.04)",borderRadius:14,padding:"13px 16px",border:"1px solid rgba(168,192,255,0.1)",marginTop:8}}>
-        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:2.5,color:"#A8C0FF",textTransform:"uppercase",marginBottom:10,opacity:0.8}}>📸 Референсные фото</div>
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
-          {(persona.referencePhotos||[]).map((ph,i)=>(
-            <div key={i} style={{position:"relative",width:72,height:90,borderRadius:10,overflow:"hidden",border:"1px solid rgba(168,192,255,0.15)"}}>
-              <img src={ph} alt={`ref-${i}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-              <button onClick={()=>{const arr=[...(persona.referencePhotos||[])];arr.splice(i,1);onChange("referencePhotos",arr);}}
-                style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.6)",border:"none",borderRadius:"50%",width:18,height:18,color:"#fff",fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>×</button>
-            </div>
-          ))}
+      {/* Референсные фото персонажа */}
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:16,border:"1px solid rgba(168,192,255,0.07)",overflow:"hidden"}}>
+        <div style={{padding:"13px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:500,color:"#C8D4F0"}}>📸 Референсные фото</span>
+            <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",background:"rgba(168,192,255,0.08)",borderRadius:20,padding:"1px 8px"}}>{(persona.referencePhotos||[]).length}/8</span>
+          </div>
+          <label style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,color:"#A8C0FF",background:"rgba(168,192,255,0.1)",border:"1px solid rgba(168,192,255,0.25)",borderRadius:8,padding:"5px 12px",cursor:"pointer"}}>
+            + Загрузить
+            <input type="file" accept="image/*" multiple style={{display:"none"}}
+              onChange={async e => {
+                const files = Array.from(e.target.files).slice(0, 8 - (persona.referencePhotos||[]).length);
+                const toBase64 = f => new Promise(res => {
+                  const r = new FileReader();
+                  r.onload = () => res(r.result);
+                  r.readAsDataURL(f);
+                });
+                const newPhotos = await Promise.all(files.map(toBase64));
+                const updated = [...(persona.referencePhotos||[]), ...newPhotos];
+                onChange("referencePhotos", updated);
+              }}
+            />
+          </label>
         </div>
-        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,width:"100%",padding:"10px",background:"rgba(168,192,255,0.04)",border:"1px dashed rgba(168,192,255,0.2)",borderRadius:10,fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#7888AA",cursor:"pointer",transition:"all .15s"}}
-          onMouseOver={e=>{e.currentTarget.style.color="#A8C0FF";e.currentTarget.style.borderColor="rgba(168,192,255,0.35)"}}
-          onMouseOut={e=>{e.currentTarget.style.color="#7888AA";e.currentTarget.style.borderColor="rgba(168,192,255,0.2)"}}>
-          <span style={{fontSize:14,opacity:.6}}>✦</span> Загрузить фото
-          <input type="file" multiple accept="image/*" style={{display:"none"}} onChange={e=>{
-            const files = Array.from(e.target.files||[]);
-            Promise.all(files.map(f=>new Promise((res)=>{
-              const reader=new FileReader();
-              reader.onload=()=>res(reader.result);
-              reader.readAsDataURL(f);
-            }))).then(bases=>{
-              onChange("referencePhotos",[...(persona.referencePhotos||[]),...bases]);
-            });
-            e.target.value="";
-          }}/>
-        </label>
-        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:6}}>Фото лица персонажа для генерации (до 5 штук)</div>
+
+        {(persona.referencePhotos||[]).length > 0 && (
+          <div style={{padding:"0 20px 16px",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {(persona.referencePhotos||[]).map((photo, idx) => (
+              <div key={idx} style={{position:"relative",borderRadius:10,overflow:"hidden",aspectRatio:"1",background:"rgba(168,192,255,0.04)"}}>
+                <img src={photo} alt={`ref-${idx}`} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                <button onClick={()=>{
+                  const updated = (persona.referencePhotos||[]).filter((_,i)=>i!==idx);
+                  onChange("referencePhotos", updated);
+                }}
+                  style={{position:"absolute",top:4,right:4,width:20,height:20,borderRadius:"50%",background:"rgba(0,0,0,0.7)",border:"none",cursor:"pointer",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
+                  ×
+                </button>
+                {idx===0 && <div style={{position:"absolute",bottom:4,left:4,fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,color:"#FFD580",background:"rgba(0,0,0,0.7)",borderRadius:4,padding:"1px 5px"}}>ГЛАВНОЕ</div>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(persona.referencePhotos||[]).length === 0 && (
+          <div style={{padding:"20px",textAlign:"center",borderTop:"1px solid rgba(168,192,255,0.05)"}}>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#4A5570"}}>Загрузи 3-5 фото с разных ракурсов</div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A5570",marginTop:4,opacity:0.7}}>Они будут использоваться как референс при генерации фото к постам</div>
+          </div>
+        )}
       </div>
 
     </div>

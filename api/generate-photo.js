@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         prompt,
-        imageUrls: persona?.referencePhotos || [],
+        imageUrls: (persona?.referencePhotos || []).slice(0, 5),
         resolution: "2K",
         aspectRatio: "4:5"
       }),
