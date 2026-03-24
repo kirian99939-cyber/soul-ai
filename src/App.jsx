@@ -1160,7 +1160,16 @@ function StudioTab({persona, onSave}) {
       });
       const d = await r.json();
       const txt = d.content?.map(i=>i.text||"").join("")||"";
-      setPosts(JSON.parse(txt.replace(/```json|```/g,"").trim()));
+      const generatedPosts = JSON.parse(txt.replace(/```json|```/g,"").trim());
+      setPosts(generatedPosts);
+      // Auto-save all generated posts as drafts
+      generatedPosts.forEach(p => {
+        onSave({
+          id: uid(), personaId: persona.id, platform: "threads",
+          text: p.text, format: p.format||"", topic: p.topic||"",
+          tag: p.tag||"", why: p.why||"", status: "draft", createdAt: now(),
+        });
+      });
     } catch(e){setPosts([{text:"Ошибка: "+e.message,format:"",topic:"",tag:"",why:""}]);}
     setGenning(false);
   };
@@ -1494,6 +1503,8 @@ function ArcTab({ persona, onSave }) {
   const [ptB,    setPtB]    = useState("Тбилиси. Неделя одна в горах. Впервые не планирует следующий шаг. Доверяет моменту.");
   const [days,   setDays]   = useState(7);
   const [arc,    setArc]    = useState([]);
+  const [savedArcs, setSavedArcs] = useState([]);
+  const [expandedArc, setExpandedArc] = useState(null);
   const [genning,setGenning]= useState(false);
   const [selDay, setSelDay] = useState(null);
   const [saved,  setSaved]  = useState({});
@@ -1533,6 +1544,12 @@ function ArcTab({ persona, onSave }) {
     } catch(e) { console.error(e); }
     setGenArcPhoto(null);
   };
+
+  useEffect(()=>{
+    loadData("arcs_" + persona.id).then(data => {
+      if(data?.length) setSavedArcs(data);
+    }).catch(()=>{});
+  }, [persona.id]);
 
   const st    = persona.state || ST_DEF;
   const soul  = persona.soul  || {};
@@ -1609,7 +1626,21 @@ ${ptB}
       if(d.error){ console.error("Claude arc error:", d.error); setGenning(false); return; }
       const txt = d.content?.map(i=>i.text||"").join("")||"";
       const cleaned = txt.replace(/```json/g,"").replace(/```/g,"").trim();
-      setArc(JSON.parse(cleaned));
+      const parsedArc = JSON.parse(cleaned);
+      setArc(parsedArc);
+      // Auto-save arc
+      const newArc = {
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        ptA, ptB, days,
+        items: parsedArc,
+      };
+      setSavedArcs(prev => {
+        const updated = [newArc, ...prev];
+        saveData("arcs_" + persona.id, updated).catch(console.error);
+        return updated;
+      });
+      setExpandedArc(newArc.id);
     } catch(e) {
       console.error("Arc generate error:", e);
     }
@@ -1634,6 +1665,43 @@ ${ptB}
 
   return (
     <div style={{animation:"fadeUp .3s ease"}}>
+
+      {/* Сохранённые арки */}
+      {savedArcs.length > 0 && (
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3,color:"#4A5570",textTransform:"uppercase"}}>
+            Сохранённые арки ({savedArcs.length})
+          </div>
+          {savedArcs.map(sa => (
+            <div key={sa.id} style={{background:"rgba(255,255,255,0.03)",borderRadius:16,border:`1px solid ${expandedArc===sa.id?"rgba(168,192,255,0.25)":"rgba(168,192,255,0.07)"}`,overflow:"hidden",transition:"border-color .2s"}}>
+              <div style={{padding:"12px 18px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}
+                onClick={()=>{setExpandedArc(expandedArc===sa.id?null:sa.id);if(expandedArc!==sa.id){setArc(sa.items||[]);setSelDay(null);}}}>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",fontWeight:500}}>
+                    {sa.ptA?.slice(0,40)}... → {sa.ptB?.slice(0,30)}...
+                  </div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:3}}>
+                    {sa.days} дней · {new Date(sa.createdAt).toLocaleDateString("ru",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}
+                  </div>
+                </div>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#A8C0FF",background:"rgba(168,192,255,0.08)",borderRadius:20,padding:"2px 8px"}}>{sa.items?.length} дней</span>
+                <button onClick={e=>{
+                  e.stopPropagation();
+                  const updated = savedArcs.filter(a=>a.id!==sa.id);
+                  setSavedArcs(updated);
+                  saveData("arcs_" + persona.id, updated).catch(console.error);
+                  if(expandedArc===sa.id) setExpandedArc(null);
+                }} style={{background:"none",border:"1px solid rgba(255,96,96,0.2)",borderRadius:6,padding:"3px 8px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#FF6060",transition:"all .15s"}}
+                  onMouseOver={e=>e.currentTarget.style.background="rgba(255,96,96,0.1)"}
+                  onMouseOut={e=>e.currentTarget.style.background="none"}>
+                  ✕ Удалить
+                </button>
+                <span style={{color:"#4A5570",fontSize:11,transform:expandedArc===sa.id?"rotate(90deg)":"none",transition:"transform .2s"}}>▸</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Header */}
       <div style={{
