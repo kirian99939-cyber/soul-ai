@@ -98,7 +98,12 @@ export default async function handler(req, res) {
       console.log(`Poll ${i+1} response:`, JSON.stringify(pollData).slice(0, 300));
 
       const status = pollData?.data?.status || pollData?.status;
-      const imageUrl = pollData?.data?.imageUrl || pollData?.data?.output || pollData?.data?.image_url;
+      const imageUrl =
+        pollData?.data?.result_urls?.[0] ||
+        pollData?.data?.result_urls ||
+        pollData?.data?.imageUrl ||
+        pollData?.data?.image_url ||
+        pollData?.data?.output?.[0];
 
       if(imageUrl) {
         console.log("Got image:", imageUrl);
