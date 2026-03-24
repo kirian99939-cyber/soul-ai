@@ -70,12 +70,14 @@ export default async function handler(req, res) {
       }),
     });
 
-    if(!submitRes.ok) {
-      const err = await submitRes.text();
-      return res.status(500).json({ error: `Submit failed: ${submitRes.status}`, details: err });
-    }
-
+    console.log("NanoBanana status:", submitRes.status);
     const submitData = await submitRes.json();
+    console.log("NanoBanana response:", JSON.stringify(submitData).slice(0, 500));
+
+    if(!submitRes.ok) {
+      console.error("NanoBanana error:", JSON.stringify(submitData));
+      return res.status(500).json({ error: "NanoBanana failed", details: submitData });
+    }
     const taskId = submitData.task_id || submitData.id || submitData.taskId;
 
     if(!taskId) return res.status(500).json({ error: "No task_id returned", raw: submitData });
