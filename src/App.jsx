@@ -928,6 +928,7 @@ function SoulEditor({persona, onChange}) {
                 const newPhotos = await Promise.all(files.map(toBase64));
                 const updated = [...(persona.referencePhotos||[]), ...newPhotos];
                 onChange("referencePhotos", updated);
+                saveData("ref_photos_" + persona.id, updated).catch(e => console.error("Save ref photos error:", e));
               }}
             />
           </label>
@@ -941,6 +942,7 @@ function SoulEditor({persona, onChange}) {
                 <button onClick={()=>{
                   const updated = (persona.referencePhotos||[]).filter((_,i)=>i!==idx);
                   onChange("referencePhotos", updated);
+                  saveData("ref_photos_" + persona.id, updated).catch(e => console.error("Save ref photos error:", e));
                 }}
                   style={{position:"absolute",top:4,right:4,width:20,height:20,borderRadius:"50%",background:"rgba(0,0,0,0.7)",border:"none",cursor:"pointer",color:"#fff",fontSize:11,display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
                   ×
