@@ -196,8 +196,10 @@ const LERA_SOUL = {
   taboo:"Политика, бодишейминг, мат, показной люкс, «ты должна», агрессивные продажи",
   catchphrases:"«Жизнь нельзя откладывать», «Страшно — не значит не моё», «Я не черновик»",
   manifesto:"Жадная до жизни — и не извиняюсь за это.",
-  audience:"Женщины 25-45, которые боятся разрешить себе жить",
-  contentStrategy:"Каждый пост — удар по внутреннему цензору. Не учу, не мотивирую — живу вслух. Это само по себе освобождает.",
+  audience:"Женщины 25-45, у которых внутри живёт такая же Лера — но пока заперта.",
+  contentStrategy:"Каждый день как последний. Каждая история — как кадр из фильма. Безумие с рефлексией: прыжок с парашютом + мысль о страхе. Никакой серости, никакой паузы.",
+  visualCode:"Камерные фото как из путевого дневника. Зерно, движение, свет в кадре. Не постановка — поимка момента. Скорпион на тарелке, байк на горной дороге, закат с крыши.",
+  contentCode:"Каждое приключение — история про внутреннее разрешение. Читательница должна думать: я тоже так хочу. Никакой дидактики — только живой пример.",
 };
 const EMPTY_SOUL = () => ({
   psycho:{mbti:"",temperament:"",enneagram:"",attachment:""},archetypes:"",
@@ -225,6 +227,9 @@ const buildPrompt = (p, sel, ctx, num) => {
 ${s.manifesto ? `МАНИФЕСТ АККАУНТА: ${s.manifesto}` : ""}
 ${s.audience ? `АУДИТОРИЯ: ${s.audience}` : ""}
 ${s.contentStrategy ? `СТРАТЕГИЯ: ${s.contentStrategy}` : ""}
+${s.contentCode ? `КОД КОНТЕНТА: ${s.contentCode}` : ""}
+
+Каждый пост должен соответствовать этому ДНК.
 
 СОСТОЯНИЕ:
 Настроение: ${st.mood}%, Энергия: ${st.energy}%, Уверенность: ${st.confidence}%, Тревога: ${st.anxiety}%, Креативность: ${st.creativity}%
@@ -918,11 +923,25 @@ function SoulEditor({persona, onChange}) {
             ph="Кто читает..."/>
         </div>
 
-        <div>
+        <div style={{marginBottom:12}}>
           <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>Стратегия контента</div>
           <Ed value={soul.contentStrategy||""} onChange={v=>onChange("soul",{...soul,contentStrategy:v})}
             style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
             ph="Что даёт аккаунт читателю..." multi/>
+        </div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>Визуальный код</div>
+          <Ed value={soul.visualCode||""} onChange={v=>onChange("soul",{...soul,visualCode:v})}
+            style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
+            ph="Как выглядят фото..." multi/>
+        </div>
+
+        <div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>Контентный код</div>
+          <Ed value={soul.contentCode||""} onChange={v=>onChange("soul",{...soul,contentCode:v})}
+            style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
+            ph="Как строится каждый пост..." multi/>
         </div>
       </div>
 
@@ -1643,6 +1662,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
 ${soul.manifesto ? `МАНИФЕСТ: ${soul.manifesto}` : ""}
 ${soul.audience ? `АУДИТОРИЯ: ${soul.audience}` : ""}
 ${soul.contentStrategy ? `СТРАТЕГИЯ: ${soul.contentStrategy}` : ""}
+${soul.contentCode ? `КОД КОНТЕНТА: ${soul.contentCode}` : ""}
 
 ТЕКУЩЕЕ СОСТОЯНИЕ (Точка А):
 ${ptA}

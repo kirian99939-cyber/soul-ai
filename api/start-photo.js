@@ -44,9 +44,12 @@ export default async function handler(req, res) {
   }
 
   // Phone camera aesthetic prompt
-  const phoneStyle = "shot on iPhone, slightly overexposed, natural candid moment, real person photo, slight grain and noise, imperfect framing, authentic lifestyle photography, no filters, raw and real, 4:5 vertical";
+  const visualCode = persona?.soul?.visualCode || "";
+  const photoStyle = visualCode
+    ? `${visualCode}. Shot on iPhone, slight grain, candid moment, authentic.`
+    : "shot on iPhone, slightly overexposed, natural candid moment, real person photo, slight grain and noise, imperfect framing, authentic lifestyle photography, no filters, raw and real, 4:5 vertical";
 
-  const prompt = `${preset}. ${scene}. ${phoneStyle}. No text, no watermarks.`;
+  const prompt = `${preset}. ${scene}. ${photoStyle}. No text, no watermarks.`;
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
 
   try {
