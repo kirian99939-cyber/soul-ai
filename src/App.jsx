@@ -1122,6 +1122,7 @@ function StudioTab({persona, onSave}) {
   const [photos,   setPhotos]   = useState({}); // {index: [url1, url2, url3]}
   const [selectedPhoto, setSelectedPhoto] = useState({}); // {index: 0}
   const [genPhoto, setGenPhoto] = useState(null);
+  const [photoCount, setPhotoCount] = useState(3);
   const [trendSrc, setTrendSrc] = useState("internal"); // "internal" | "live"
 
   const { trends: liveTrends, loading: trendsLoading, fetchedAt, refresh: refreshTrends } = useTrends();
@@ -1177,11 +1178,11 @@ function StudioTab({persona, onSave}) {
     setGenRep(false);
   };
 
-  const generatePhoto = async (index, postText) => {
+  const generatePhoto = async (index, postText, count = 3) => {
     setGenPhoto(index);
     try {
-      // Start 3 generations simultaneously
-      const starts = await Promise.all([1,2,3].map(() =>
+      // Start generations simultaneously
+      const starts = await Promise.all(Array.from({length: count}).map(() =>
         fetch("/api/start-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1395,24 +1396,36 @@ function StudioTab({persona, onSave}) {
 
           {/* Сгенерированные фото */}
           {photos[i]?.length > 0 && (
-            <div style={{padding:"12px 16px"}}>
+            <div style={{padding:"0 16px 12px"}}>
+              {/* Главное фото */}
               <img
-                src={photos[i][selectedPhoto[i]||0]}
-                alt="generated photo"
-                style={{width:"100%",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.15)",maxHeight:500,objectFit:"cover"}}
+                src={photos[i][selectedPhoto[i] || 0]}
+                alt="generated"
+                style={{width:"100%",maxHeight:320,objectFit:"cover",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)",cursor:"pointer"}}
+                onClick={()=>window.open(photos[i][selectedPhoto[i] || 0], "_blank")}
               />
+              {/* Миниатюры */}
               {photos[i].length > 1 && (
-                <div style={{display:"flex",gap:6,marginTop:8,justifyContent:"center"}}>
-                  {photos[i].map((url,pi)=>(
-                    <button key={pi} onClick={()=>setSelectedPhoto(prev=>({...prev,[i]:pi}))}
-                      style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:(selectedPhoto[i]||0)===pi?"2px solid #A8C0FF":"2px solid rgba(168,192,255,0.15)",cursor:"pointer",padding:0,background:"none"}}>
-                      <img src={url} alt={`variant-${pi+1}`} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
-                    </button>
+                <div style={{display:"flex",gap:6,marginTop:6}}>
+                  {photos[i].map((url, pi) => (
+                    <div key={pi} onClick={()=>setSelectedPhoto(prev=>({...prev,[i]:pi}))}
+                      style={{width:64,height:64,borderRadius:8,overflow:"hidden",cursor:"pointer",flexShrink:0,
+                        border:`2px solid ${(selectedPhoto[i]||0)===pi?"#A8C0FF":"transparent"}`,
+                        opacity:(selectedPhoto[i]||0)===pi?1:0.55,transition:"all .15s"}}>
+                      <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    </div>
+                  ))}
+                  {/* Плейсхолдеры для ещё не готовых фото */}
+                  {Array.from({length: Math.max(0, photoCount - photos[i].length)}).map((_,pi) => (
+                    <div key={"ph"+pi} style={{width:64,height:64,borderRadius:8,background:"rgba(168,192,255,0.06)",border:"1px solid rgba(168,192,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <span style={{fontSize:16,opacity:0.3}}>⟳</span>
+                    </div>
                   ))}
                 </div>
               )}
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:6,textAlign:"right"}}>
-                📸 NanoBanana Pro · {photos[i].length} вариант{photos[i].length>1?"а":""} · {new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:4,display:"flex",justifyContent:"space-between"}}>
+                <span>📸 {photos[i].length} из {photoCount} готово</span>
+                <span>NanoBanana Pro · {new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}</span>
               </div>
             </div>
           )}
@@ -1425,7 +1438,19 @@ function StudioTab({persona, onSave}) {
               onMouseOut={e=>{e.currentTarget.style.color="#7888AA";e.currentTarget.style.borderColor="rgba(168,192,255,0.1)"}}>
               💬 Смоделировать ответы
             </button>
-            <button onClick={()=>generatePhoto(i, p.text)} disabled={genPhoto===i}
+            <div style={{display:"flex",alignItems:"center",gap:4}}>
+              {[1,2,3].map(n=>(
+                <button key={n} onClick={()=>setPhotoCount(n)}
+                  style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,
+                    color:photoCount===n?"#060914":"#4A5570",
+                    background:photoCount===n?"#A8C0FF":"rgba(168,192,255,0.06)",
+                    border:"none",borderRadius:6,width:20,height:20,cursor:"pointer",
+                    display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {n}
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>generatePhoto(i, p.text, photoCount)} disabled={genPhoto===i}
               style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
                 color:genPhoto===i?"#4A5570":"#FFD580",
                 background:"rgba(255,213,128,0.08)",

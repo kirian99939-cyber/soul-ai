@@ -9,25 +9,39 @@ export default async function handler(req, res) {
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
   const preset = `${persona?.age || 30} year old Russian woman, ${hairColor} hair, blue eyes, light freckles, natural makeup, authentic lifestyle photography`;
 
-  // Detect scene from post text
-  const t = (postText || "").toLowerCase();
-  let scene = "woman in a cozy indoor space, sitting naturally";
-  if(t.includes("кофе") || t.includes("утр") || t.includes("завтрак"))
-    scene = "woman holding a cup of coffee by the window, morning light";
-  else if(t.includes("стамбул") || t.includes("турци") || t.includes("город") || t.includes("улиц"))
-    scene = "woman on a city street, urban background, walking";
-  else if(t.includes("грузи") || t.includes("тбилис") || t.includes("гор"))
-    scene = "woman in mountains or georgian streets, travel mood";
-  else if(t.includes("гардероб") || t.includes("одежд") || t.includes("стиль") || t.includes("образ"))
-    scene = "woman looking at clothes or getting dressed, lifestyle";
-  else if(t.includes("мам") || t.includes("дом") || t.includes("семь"))
-    scene = "woman sitting at home, thoughtful, natural indoor light";
-  else if(t.includes("бег") || t.includes("спорт") || t.includes("трениров"))
-    scene = "woman after workout, natural gym or outdoor setting";
-  else if(t.includes("терапи") || t.includes("психолог") || t.includes("чувств"))
-    scene = "woman in a quiet moment, introspective, soft natural light";
-  else if(t.includes("путешеств") || t.includes("аэропорт") || t.includes("самолёт"))
-    scene = "woman at airport or with luggage, travel vibes";
+  // Ask Claude to determine the best scene for the post
+  let scene = "woman in a natural candid moment, authentic lifestyle";
+  try {
+    const sceneRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.VITE_ANTHROPIC_KEY || "",
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 150,
+        messages: [{
+          role: "user",
+          content: `Прочитай этот пост от женщины-блогера и опиши одной строкой на английском — какую сцену/момент лучше всего сфотографировать чтобы визуально дополнить этот пост. Только сцена, без пояснений, максимум 20 слов.
+
+Пост: "${postText}"
+
+Примеры ответов:
+- "woman sitting by window with coffee, looking outside thoughtfully"
+- "woman packing a small backpack, minimal clothes on bed"
+- "woman walking alone on city street, looking confident"
+- "woman sitting on floor surrounded by clothes, deciding what to wear"`
+        }]
+      })
+    });
+    const sceneData = await sceneRes.json();
+    scene = sceneData.content?.[0]?.text?.trim() || scene;
+    console.log("Claude scene:", scene);
+  } catch(e) {
+    console.warn("Claude scene detection failed:", e.message);
+  }
 
   // Phone camera aesthetic prompt
   const phoneStyle = "shot on iPhone, slightly overexposed, natural candid moment, real person photo, slight grain and noise, imperfect framing, authentic lifestyle photography, no filters, raw and real, 4:5 vertical";
