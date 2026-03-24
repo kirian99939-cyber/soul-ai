@@ -1159,7 +1159,13 @@ function StudioTab({persona, onSave}) {
         body: JSON.stringify({ postText, persona }),
       });
       const d = await r.json();
-      if(d.imageUrl) setPhotos(prev => ({ ...prev, [postIndex]: d.imageUrl }));
+      console.log("Photo received:", d);
+      if(d.imageUrl) {
+        console.log("Setting photo for index", postIndex, ":", d.imageUrl);
+        setPhotos(prev => ({ ...prev, [postIndex]: d.imageUrl }));
+      } else {
+        console.error("No imageUrl in response:", d);
+      }
     } catch(e) { console.error(e); }
     setGenPhoto(null);
   };
@@ -1323,9 +1329,17 @@ function StudioTab({persona, onSave}) {
 
           {/* Сгенерированное фото */}
           {photos[i] && (
-            <div style={{padding:"0 16px 12px"}}>
-              <img src={photos[i]} alt="generated"
-                style={{width:"100%",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)"}}/>
+            <div style={{padding:"12px 16px"}}>
+              <img
+                src={photos[i]}
+                alt="generated photo"
+                style={{width:"100%",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.15)",maxHeight:500,objectFit:"cover"}}
+                onError={e=>console.error("Image load error:", e)}
+                onLoad={()=>console.log("Image loaded successfully:", photos[i])}
+              />
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:6,textAlign:"right"}}>
+                📸 NanoBanana Pro · {new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}
+              </div>
             </div>
           )}
 
