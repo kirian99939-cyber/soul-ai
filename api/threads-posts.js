@@ -1,11 +1,11 @@
 const BASE = "https://ensembledata.com/apis";
 
 const KEYWORDS = [
-  "solo travel",
-  "capsule wardrobe",
-  "therapy relationships",
-  "life after 30",
-  "confidence style",
+  "путешествие",
+  "гардероб",
+  "терапия",
+  "уверенность",
+  "стиль",
 ];
 
 async function searchThreads(keyword, token) {
