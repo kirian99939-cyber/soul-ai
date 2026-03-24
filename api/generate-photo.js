@@ -83,15 +83,18 @@ export default async function handler(req, res) {
     if(!taskId) return res.status(500).json({ error: "No task_id returned", raw: submitData });
 
     // Step 2: poll for result (max 30s)
+    console.log("Polling taskId:", taskId);
     for(let i = 0; i < 15; i++) {
       await new Promise(r => setTimeout(r, 2000));
 
-      const pollRes = await fetch(`${NB_BASE}/api/v1/nanobanana/task/${taskId}`, {
+      const pollRes = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/task/${taskId}`, {
         headers: { "Authorization": `Bearer ${key}` },
       });
+      console.log("Poll status:", pollRes.status);
 
       if(!pollRes.ok) continue;
       const pollData = await pollRes.json();
+      console.log("Poll response:", JSON.stringify(pollData).slice(0, 300));
 
       const status = pollData.status || pollData.state;
       if(status === "completed" || status === "done" || status === "success") {
