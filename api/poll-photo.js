@@ -4,20 +4,25 @@ export default async function handler(req, res) {
 
   const { taskId } = req.query;
   const key = process.env.NANOBANANA_API_KEY;
-
   if(!taskId) return res.status(400).json({ error: "taskId required" });
 
   try {
-    const r = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/task-detail?taskId=${taskId}`, {
+    const r = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/record-info?taskId=${taskId}`, {
       headers: { "Authorization": `Bearer ${key}` },
     });
     const d = await r.json();
-    console.log("Poll response:", JSON.stringify(d).slice(0, 500));
+    console.log("Record-info response:", JSON.stringify(d).slice(0, 500));
 
-    const status = d?.data?.status || d?.status || "pending";
-    const imageUrl = d?.data?.result_urls?.[0] || d?.data?.result_urls || d?.data?.imageUrl;
+    const successFlag = d?.data?.successFlag;
+    const imageUrl = d?.data?.response?.resultImageUrl || d?.data?.response?.originImageUrl;
 
-    return res.status(200).json({ status, imageUrl: imageUrl || null, raw: d?.data });
+    if(successFlag === 1 && imageUrl) {
+      return res.status(200).json({ status: "success", imageUrl });
+    }
+    if(successFlag === 2 || successFlag === 3) {
+      return res.status(200).json({ status: "failed", error: d?.data?.errorMessage });
+    }
+    return res.status(200).json({ status: "pending", successFlag });
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
