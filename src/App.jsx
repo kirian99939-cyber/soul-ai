@@ -1432,9 +1432,31 @@ function StudioTab({persona, onSave}) {
                   ))}
                 </div>
               )}
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:4,display:"flex",justifyContent:"space-between"}}>
-                <span>📸 {photos[i].length} из {photoCount} готово</span>
-                <span>NanoBanana Pro · {new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}</span>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>
+                  📸 {photos[i].length} из {photoCount} · NanoBanana Pro
+                </span>
+                <button
+                  onClick={async () => {
+                    const url = photos[i][selectedPhoto[i]||0];
+                    try {
+                      const res = await fetch(url);
+                      const blob = await res.blob();
+                      const a = document.createElement("a");
+                      a.href = URL.createObjectURL(blob);
+                      a.download = `soul-ai-photo-${Date.now()}.jpg`;
+                      a.click();
+                      URL.revokeObjectURL(a.href);
+                    } catch(e) { window.open(url, "_blank"); }
+                  }}
+                  style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,
+                    color:"#A8C0FF",background:"rgba(168,192,255,0.08)",
+                    border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,
+                    padding:"4px 10px",cursor:"pointer",transition:"all .15s"}}
+                  onMouseOver={e=>e.currentTarget.style.background="rgba(168,192,255,0.16)"}
+                  onMouseOut={e=>e.currentTarget.style.background="rgba(168,192,255,0.08)"}>
+                  ↓ Скачать
+                </button>
               </div>
             </div>
           )}
@@ -1943,6 +1965,32 @@ ${ptB}
                         ))}
                       </div>
                     )}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>
+                        📸 {arcPhotos[selDay].length} фото · NanoBanana Pro
+                      </span>
+                      <button
+                        onClick={async () => {
+                          const url = arcPhotos[selDay][arcSelectedPhoto[selDay]||0];
+                          try {
+                            const res = await fetch(url);
+                            const blob = await res.blob();
+                            const a = document.createElement("a");
+                            a.href = URL.createObjectURL(blob);
+                            a.download = `soul-ai-arc-day${selDay+1}-${Date.now()}.jpg`;
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                          } catch(e) { window.open(url, "_blank"); }
+                        }}
+                        style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,
+                          color:"#A8C0FF",background:"rgba(168,192,255,0.08)",
+                          border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,
+                          padding:"4px 10px",cursor:"pointer",transition:"all .15s"}}
+                        onMouseOver={e=>e.currentTarget.style.background="rgba(168,192,255,0.16)"}
+                        onMouseOut={e=>e.currentTarget.style.background="rgba(168,192,255,0.08)"}>
+                        ↓ Скачать
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -2320,6 +2368,32 @@ function RemixTab({ persona }) {
                           ))}
                         </div>
                       )}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>
+                          📸 {remixPhotos[post.id].length} фото · NanoBanana Pro
+                        </span>
+                        <button
+                          onClick={async () => {
+                            const url = remixPhotos[post.id][remixSelectedPhoto[post.id]||0];
+                            try {
+                              const res = await fetch(url);
+                              const blob = await res.blob();
+                              const a = document.createElement("a");
+                              a.href = URL.createObjectURL(blob);
+                              a.download = `soul-ai-remix-${Date.now()}.jpg`;
+                              a.click();
+                              URL.revokeObjectURL(a.href);
+                            } catch(e) { window.open(url, "_blank"); }
+                          }}
+                          style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,
+                            color:"#A8C0FF",background:"rgba(168,192,255,0.08)",
+                            border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,
+                            padding:"4px 10px",cursor:"pointer",transition:"all .15s"}}
+                          onMouseOver={e=>e.currentTarget.style.background="rgba(168,192,255,0.16)"}
+                          onMouseOut={e=>e.currentTarget.style.background="rgba(168,192,255,0.08)"}>
+                          ↓ Скачать
+                        </button>
+                      </div>
                     </div>
                   )}
 
