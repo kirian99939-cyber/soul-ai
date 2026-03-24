@@ -1150,24 +1150,48 @@ function StudioTab({persona, onSave}) {
     setGenRep(false);
   };
 
-  const generatePhoto = async (postIndex, postText) => {
-    setGenPhoto(postIndex);
+  const generatePhoto = async (index, postText) => {
+    setGenPhoto(index);
     try {
-      const r = await fetch("/api/generate-photo", {
+      // Step 1: start generation
+      const startRes = await fetch("/api/start-photo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postText, persona }),
       });
-      const d = await r.json();
-      console.log("Photo received:", d);
-      if(d.imageUrl) {
-        console.log("Setting photo for index", postIndex, ":", d.imageUrl);
-        setPhotos(prev => ({ ...prev, [postIndex]: d.imageUrl }));
-      } else {
-        console.error("No imageUrl in response:", d);
-      }
-    } catch(e) { console.error(e); }
-    setGenPhoto(null);
+      const startData = await startRes.json();
+      if(!startData.taskId) { console.error("No taskId:", startData); setGenPhoto(null); return; }
+
+      console.log("Generation started, taskId:", startData.taskId);
+
+      // Step 2: poll from frontend every 5s
+      let attempts = 0;
+      const poll = async () => {
+        attempts++;
+        const pollRes = await fetch(`/api/poll-photo?taskId=${startData.taskId}`);
+        const pollData = await pollRes.json();
+        console.log(`Poll ${attempts}:`, pollData.status, pollData.imageUrl);
+
+        if(pollData.imageUrl) {
+          setPhotos(prev => ({ ...prev, [index]: pollData.imageUrl }));
+          setGenPhoto(null);
+          return;
+        }
+
+        if(attempts < 30 && pollData.status !== "failed") {
+          setTimeout(poll, 5000);
+        } else {
+          console.error("Photo generation timeout or failed");
+          setGenPhoto(null);
+        }
+      };
+
+      setTimeout(poll, 5000);
+
+    } catch(e) {
+      console.error("generatePhoto error:", e);
+      setGenPhoto(null);
+    }
   };
 
   return (
