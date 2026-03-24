@@ -4,6 +4,10 @@
  * Env: NANOBANANA_API_KEY
  */
 
+export const config = {
+  maxDuration: 300,
+};
+
 const NB_BASE = "https://api.nanobananaapi.ai"; // уточним если другой
 
 // Пресет внешности Леры
@@ -86,8 +90,8 @@ export default async function handler(req, res) {
     }
 
     // Poll for result
-    for(let i = 0; i < 20; i++) {
-      await new Promise(r => setTimeout(r, 3000));
+    for(let i = 0; i < 40; i++) {
+      await new Promise(r => setTimeout(r, 5000));
 
       const pollRes = await fetch(`https://api.nanobananaapi.ai/api/v1/nanobanana/task/${taskId}`, {
         headers: { "Authorization": `Bearer ${process.env.NANOBANANA_API_KEY}` }
