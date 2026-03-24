@@ -1119,7 +1119,8 @@ function StudioTab({persona, onSave}) {
   const [selPost,  setSelPost]  = useState(null);
   const [replies,  setReplies]  = useState([]);
   const [genRep,   setGenRep]   = useState(false);
-  const [photos,   setPhotos]   = useState({});
+  const [photos,   setPhotos]   = useState({}); // {index: [url1, url2, url3]}
+  const [selectedPhoto, setSelectedPhoto] = useState({}); // {index: 0}
   const [genPhoto, setGenPhoto] = useState(null);
   const [trendSrc, setTrendSrc] = useState("internal"); // "internal" | "live"
 
@@ -1179,40 +1180,55 @@ function StudioTab({persona, onSave}) {
   const generatePhoto = async (index, postText) => {
     setGenPhoto(index);
     try {
-      // Step 1: start generation
-      const startRes = await fetch("/api/start-photo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postText, persona }),
-      });
-      const startData = await startRes.json();
-      if(!startData.taskId) { console.error("No taskId:", startData); setGenPhoto(null); return; }
+      // Start 3 generations simultaneously
+      const starts = await Promise.all([1,2,3].map(() =>
+        fetch("/api/start-photo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ postText, persona }),
+        }).then(r => r.json())
+      ));
 
-      console.log("Generation started, taskId:", startData.taskId);
+      const taskIds = starts.map(s => s.taskId).filter(Boolean);
+      console.log("Started", taskIds.length, "generations:", taskIds);
 
-      // Step 2: poll from frontend every 5s
-      let attempts = 0;
-      const poll = async () => {
-        attempts++;
-        const pollRes = await fetch(`/api/poll-photo?taskId=${startData.taskId}`);
-        const pollData = await pollRes.json();
-        console.log(`Poll ${attempts}:`, pollData.status, pollData.imageUrl);
+      if(!taskIds.length) { setGenPhoto(null); return; }
 
-        if(pollData.imageUrl) {
-          setPhotos(prev => ({ ...prev, [index]: pollData.imageUrl }));
-          setGenPhoto(null);
+      // Poll all tasks
+      const results = new Array(taskIds.length).fill(null);
+      let resolved = 0;
+
+      const pollTask = async (taskId, i, attempt = 0) => {
+        if(attempt > 40) return;
+        await new Promise(r => setTimeout(r, attempt === 0 ? 8000 : 6000));
+
+        const res = await fetch(`/api/poll-photo?taskId=${taskId}`);
+        const data = await res.json();
+        console.log(`Task ${i+1} poll ${attempt+1}:`, data.status);
+
+        if(data.imageUrl) {
+          results[i] = data.imageUrl;
+          resolved++;
+          // Update photos array as results come in
+          setPhotos(prev => ({ ...prev, [index]: results.filter(Boolean) }));
+          setSelectedPhoto(prev => ({ ...prev, [index]: 0 }));
+          if(resolved >= taskIds.length) setGenPhoto(null);
           return;
         }
 
-        if(attempts < 30 && pollData.status !== "failed") {
-          setTimeout(poll, 5000);
-        } else {
-          console.error("Photo generation timeout or failed");
-          setGenPhoto(null);
+        if(data.status === "failed") {
+          resolved++;
+          if(resolved >= taskIds.length) setGenPhoto(null);
+          return;
         }
+
+        return pollTask(taskId, i, attempt + 1);
       };
 
-      setTimeout(poll, 5000);
+      // Poll all tasks in parallel
+      Promise.all(taskIds.map((id, i) => pollTask(id, i))).then(() => {
+        setGenPhoto(null);
+      });
 
     } catch(e) {
       console.error("generatePhoto error:", e);
@@ -1377,18 +1393,26 @@ function StudioTab({persona, onSave}) {
             </div>
           )}
 
-          {/* Сгенерированное фото */}
-          {photos[i] && (
+          {/* Сгенерированные фото */}
+          {photos[i]?.length > 0 && (
             <div style={{padding:"12px 16px"}}>
               <img
-                src={photos[i]}
+                src={photos[i][selectedPhoto[i]||0]}
                 alt="generated photo"
                 style={{width:"100%",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.15)",maxHeight:500,objectFit:"cover"}}
-                onError={e=>console.error("Image load error:", e)}
-                onLoad={()=>console.log("Image loaded successfully:", photos[i])}
               />
+              {photos[i].length > 1 && (
+                <div style={{display:"flex",gap:6,marginTop:8,justifyContent:"center"}}>
+                  {photos[i].map((url,pi)=>(
+                    <button key={pi} onClick={()=>setSelectedPhoto(prev=>({...prev,[i]:pi}))}
+                      style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:(selectedPhoto[i]||0)===pi?"2px solid #A8C0FF":"2px solid rgba(168,192,255,0.15)",cursor:"pointer",padding:0,background:"none"}}>
+                      <img src={url} alt={`variant-${pi+1}`} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+                    </button>
+                  ))}
+                </div>
+              )}
               <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:6,textAlign:"right"}}>
-                📸 NanoBanana Pro · {new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}
+                📸 NanoBanana Pro · {photos[i].length} вариант{photos[i].length>1?"а":""} · {new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}
               </div>
             </div>
           )}
