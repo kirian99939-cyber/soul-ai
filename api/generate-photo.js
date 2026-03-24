@@ -113,8 +113,8 @@ export default async function handler(req, res) {
       console.log("imageUrl found:", imageUrl);
 
       if(imageUrl) {
-        console.log("Got image:", imageUrl);
-        return res.status(200).json({ imageUrl });
+        console.log("Returning imageUrl:", imageUrl);
+        return res.status(200).json({ imageUrl, debug: { taskId, pollData } });
       }
 
       if(status === "failed" || status === "error") {
