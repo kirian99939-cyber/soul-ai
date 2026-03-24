@@ -109,6 +109,9 @@ export default async function handler(req, res) {
         pollData?.data?.image_url ||
         pollData?.data?.output?.[0];
 
+      console.log("Full poll response:", JSON.stringify(pollData));
+      console.log("imageUrl found:", imageUrl);
+
       if(imageUrl) {
         console.log("Got image:", imageUrl);
         return res.status(200).json({ imageUrl });
