@@ -1491,7 +1491,7 @@ function StudioTab({persona, onSave}) {
               onMouseOut={e=>e.currentTarget.style.background="rgba(255,213,128,0.08)"}>
               {genPhoto===i ? "⟳ Генерирую..." : "📸 Фото"}
             </button>
-            <button onClick={()=>{onSave({id:uid(),personaId:persona.id,platform:"threads",text:p.text,format:p.format||"",topic:p.topic||"",tag:p.tag||"",why:p.why||"",status:"draft",createdAt:now()}); }}
+            <button onClick={()=>{onSave({id:uid(),personaId:persona.id,platform:"threads",text:p.text,format:p.format||"",topic:p.topic||"",tag:p.tag||"",why:p.why||"",imageUrl:photos[i]?.[selectedPhoto[i]||0]||null,status:"draft",createdAt:now()}); }}
               style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,color:"#A8C0FF",background:"rgba(168,192,255,0.08)",border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,padding:"6px 14px",cursor:"pointer",transition:"all .15s",marginLeft:"auto"}}
               onMouseOver={e=>{e.currentTarget.style.background="rgba(168,192,255,0.15)"}}
               onMouseOut={e=>{e.currentTarget.style.background="rgba(168,192,255,0.08)"}}>
@@ -1935,6 +1935,7 @@ ${ptB}
                         onSave({id:uid(),personaId:persona.id,platform:"threads",
                           text:d.post,format:d.format||"",topic:d.title||"",
                           tag:d.tag||"",why:`День ${d.day} арки: ${d.beat?.slice(0,60)}...`,
+                          imageUrl:arcPhotos[selDay]?.[arcSelectedPhoto[selDay]||0]||null,
                           status:"draft",createdAt:now()});
                         setSaved(p=>({...p,[selDay]:true}));
                       }} style={{...u(9,isSaved?C.muted:C.bg,600),
@@ -2466,6 +2467,13 @@ function LibraryTab({personaId, content, onStatusChange, onDelete}) {
             </div>
             <div style={{...serif(14.5,C.ink),lineHeight:1.7,whiteSpace:"pre-line"}}>{item.text}</div>
             {item.why&&<div style={{...u(9,C.muted),padding:"5px 9px",background:"rgba(59,111,255,0.04)",borderRadius:7,borderLeft:"2px solid rgba(59,111,255,0.25)",marginTop:7}}>💡 {item.why}</div>}
+            {item.imageUrl && (
+              <div style={{marginTop:10}}>
+                <img src={item.imageUrl} alt="post photo"
+                  style={{width:"100%",maxHeight:200,objectFit:"contain",borderRadius:10,
+                    background:"rgba(168,192,255,0.03)",border:"1px solid rgba(168,192,255,0.08)"}}/>
+              </div>
+            )}
           </div>
           <div style={{borderTop:"1px solid rgba(59,111,255,0.08)",padding:"8px 16px",display:"flex",gap:6,background:"rgba(59,111,255,0.02)"}}>
             <button onClick={()=>navigator.clipboard?.writeText(item.text)} style={{...u(9,C.muted),background:"none",border:"1px solid rgba(59,111,255,0.1)",borderRadius:6,padding:"4px 10px",cursor:"pointer"}}>📋 Копировать</button>
