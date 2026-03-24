@@ -154,10 +154,15 @@ function useTrends() {
     setLoading(true);
     try {
       const base = import.meta.env.DEV ? "" : "";
-      const r = await fetch(`${base}/api/trends?sources=google,curated`);
+      const r = await fetch("/api/threads-posts");
       const d = await r.json();
-      setTrends(d.trends || []);
-      setFetchedAt(new Date(d.fetchedAt));
+      const trends = (d.posts || []).map(p => ({
+        text: p.keyword || p.text?.slice(0, 40),
+        score: p.viral || 70,
+        source: p.source,
+      }));
+      setTrends(trends);
+      setFetchedAt(new Date(d.fetchedAt || Date.now()));
     } catch(e) {
       console.error("Trends fetch error:", e);
       // fallback: return empty, Studio will use internal hotTopics
@@ -1075,24 +1080,26 @@ function StudioTab({persona, onSave}) {
   const { trends: liveTrends, loading: trendsLoading, fetchedAt, refresh: refreshTrends } = useTrends();
 
   const topics  = useMemo(()=>{
-    if(trendSrc === "live" && liveTrends.length > 0) {
-      // Merge live trends with persona soul filter
-      const soul = persona.soul || {};
-      return liveTrends.map(t => {
-        let score = t.score || 60;
-        const txt = t.text.toLowerCase();
-        if(txt.includes("стиль") || txt.includes("гардероб")) score += 10;
-        if(txt.includes("путешеств") || txt.includes("travel"))  score += 8;
-        if(txt.includes("женщин") || txt.includes("соло"))       score += 7;
-        if(txt.includes("терапи") || txt.includes("психолог"))   score += 6;
-        if(txt.includes("уверен") || txt.includes("свобод"))     score += 5;
-        const reason = t.source === "google" ? "🔴 Google Trends RU" :
-                       t.source.startsWith("telegram") ? "✈️ Telegram" : "✦ Curated";
-        return { topic: t.text, score: Math.min(score, 99), reason };
-      }).sort((a,b)=>b.score-a.score).slice(0,12);
+    if(trendSrc === "live") {
+      if(trendsLoading) return [];
+      if(liveTrends.length > 0) {
+        return liveTrends.slice(0, 12).map(t => {
+          let score = t.score || 60;
+          const txt = (t.text || t.topic || "").toLowerCase();
+          if(txt.includes("стиль") || txt.includes("гардероб")) score += 10;
+          if(txt.includes("путешеств") || txt.includes("travel"))  score += 8;
+          if(txt.includes("терапи") || txt.includes("психолог"))   score += 6;
+          if(txt.includes("уверен") || txt.includes("свобод"))     score += 5;
+          return {
+            topic: t.text || t.topic,
+            score: Math.min(score, 99),
+            reason: t.source === "threads_live" ? "🔴 Threads Live" : t.source === "google" ? "🔍 Google Trends" : "✦ Curated"
+          };
+        }).sort((a,b) => b.score - a.score);
+      }
     }
     return hotTopics(niches, persona.soul||{}, persona.state||ST_DEF);
-  },[niches, persona, trendSrc, liveTrends]);
+  },[niches, persona, trendSrc, liveTrends, trendsLoading]);
 
   const aura    = computeAura(persona.state||ST_DEF);
 
@@ -1266,40 +1273,60 @@ function StudioTab({persona, onSave}) {
 
       {/* Posts */}
       {posts.map((p,i)=>(
-        <div key={i} style={{...card({marginBottom:8}),animation:`fadeUp .3s ease ${i*.06}s both`}} className="glass-card">
-          <div style={{padding:"14px 16px"}}>
-            <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
-              {p.format&&<span style={{fontFamily:F.b,fontSize:10,fontWeight:700,color:C.clay,background:"rgba(124,58,237,0.08)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(124,58,237,0.18)"}}>{p.format}</span>}
-              {p.topic &&<span style={{fontFamily:F.b,fontSize:10,fontWeight:500,color:C.sage,background:"rgba(5,150,105,0.07)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(5,150,105,0.18)"}}>{p.topic}</span>}
-              {p.tag   &&<span style={{fontFamily:F.b,fontSize:10,fontWeight:500,color:C.teal,background:"rgba(8,145,178,0.07)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(8,145,178,0.15)"}}>#{p.tag}</span>}
-              <div style={{flex:1}}/>
-              <button onClick={()=>navigator.clipboard?.writeText(p.text)} style={{...u(9,C.muted),background:"rgba(59,111,255,0.04)",border:"1px solid rgba(59,111,255,0.1)",borderRadius:5,padding:"2px 8px",cursor:"pointer"}}>📋</button>
-              <button onClick={()=>onSave({id:uid(),personaId:persona.id,platform:"threads",text:p.text,format:p.format||"",topic:p.topic||"",tag:p.tag||"",why:p.why||"",status:"draft",createdAt:now()})}
-                style={{...u(9,C.bg,600),background:C.sage,border:"none",borderRadius:5,padding:"2px 9px",cursor:"pointer",boxShadow:`0 0 8px ${C.sage}88`}}>＋ Сохранить</button>
+        <div key={i} style={{background:"rgba(255,255,255,0.03)",borderRadius:18,border:"1px solid rgba(168,192,255,0.08)",overflow:"hidden",animation:`fadeUp .3s ease ${i*.06}s both`,transition:"border-color .2s",marginBottom:8}}
+          onMouseOver={e=>e.currentTarget.style.borderColor="rgba(168,192,255,0.2)"}
+          onMouseOut={e=>e.currentTarget.style.borderColor="rgba(168,192,255,0.08)"}>
+
+          {/* Header с бейджами */}
+          <div style={{padding:"12px 16px 0",display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+            {p.format && <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9.5,fontWeight:700,color:"#C4A8FF",background:"rgba(196,168,255,0.1)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(196,168,255,0.2)"}}>{p.format}</span>}
+            {p.topic  && <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9.5,fontWeight:500,color:"#80FFCC",background:"rgba(128,255,204,0.08)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(128,255,204,0.15)"}}>{p.topic}</span>}
+            {p.tag    && <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9.5,fontWeight:500,color:"#80E0FF",background:"rgba(128,224,255,0.08)",padding:"3px 10px",borderRadius:20,border:"1px solid rgba(128,224,255,0.15)"}}>#{p.tag}</span>}
+            <button onClick={()=>navigator.clipboard?.writeText(p.text)}
+              style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#4A5570",fontSize:11,transition:"color .15s",padding:2}}
+              onMouseOver={e=>e.currentTarget.style.color="#A8C0FF"}
+              onMouseOut={e=>e.currentTarget.style.color="#4A5570"}>📋</button>
+          </div>
+
+          {/* Текст поста */}
+          <div style={{padding:"12px 16px",fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:15,color:"#F0F4FF",lineHeight:1.75,borderBottom:"1px solid rgba(168,192,255,0.06)"}}>
+            {p.text}
+          </div>
+
+          {/* Почему сработает */}
+          {p.why && (
+            <div style={{padding:"10px 16px",display:"flex",gap:8,alignItems:"flex-start",borderBottom:"1px solid rgba(168,192,255,0.06)"}}>
+              <span style={{fontSize:12,flexShrink:0,marginTop:1}}>💡</span>
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#7888AA",lineHeight:1.5}}>{p.why}</span>
             </div>
-            <div style={{...serif(15.5,C.ink),lineHeight:1.8,whiteSpace:"pre-line"}}>{p.text}</div>
-            {p.why&&<div style={{...u(9.5,C.muted),padding:"6px 10px",background:"rgba(59,111,255,0.04)",borderRadius:8,borderLeft:`2px solid rgba(59,111,255,0.3)`,marginTop:8}}>💡 {p.why}</div>}
-            {photos[i] && (
-              <img src={photos[i]} alt="generated" style={{width:"100%", borderRadius:12, marginTop:10, display:"block"}}/>
-            )}
-            <button
-              onClick={() => generatePhoto(i, p.text)}
-              disabled={genPhoto === i}
-              style={{marginTop:8, width:"100%", background:"rgba(168,192,255,0.08)", border:"1px solid rgba(168,192,255,0.2)", borderRadius:10, padding:"8px", color: genPhoto===i ? "#4A5570" : "#A8C0FF", fontFamily:"'DM Sans',sans-serif", fontSize:11, fontWeight:600, cursor: genPhoto===i ? "wait" : "pointer"}}>
-              {genPhoto === i ? "⟳ Генерирую фото..." : "📸 Сгенерировать фото"}
+          )}
+
+          {/* Кнопки действий */}
+          <div style={{padding:"10px 16px",display:"flex",gap:8}}>
+            <button onClick={()=>{setSelPost(selPost===i?null:i); if(selPost!==i) genReplies(p.text);}}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,color:"#7888AA",background:"rgba(168,192,255,0.05)",border:"1px solid rgba(168,192,255,0.1)",borderRadius:8,padding:"6px 12px",cursor:"pointer",transition:"all .15s"}}
+              onMouseOver={e=>{e.currentTarget.style.color="#A8C0FF";e.currentTarget.style.borderColor="rgba(168,192,255,0.25)"}}
+              onMouseOut={e=>{e.currentTarget.style.color="#7888AA";e.currentTarget.style.borderColor="rgba(168,192,255,0.1)"}}>
+              💬 Смоделировать ответы
             </button>
-            <button onClick={()=>{setSelPost(selPost===i?null:i);if(selPost!==i){setReplies([]);genReplies(p.text);}}}
-              style={{...u(9,C.teal),background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.15)",borderRadius:7,padding:"4px 12px",cursor:"pointer",marginTop:8}}>
-              💬 {selPost===i?"скрыть":"смоделировать ответы"}
+            <button onClick={()=>{onSave({id:uid(),personaId:persona.id,platform:"threads",text:p.text,format:p.format||"",topic:p.topic||"",tag:p.tag||"",why:p.why||"",status:"draft",createdAt:now()}); }}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,color:"#A8C0FF",background:"rgba(168,192,255,0.08)",border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,padding:"6px 14px",cursor:"pointer",transition:"all .15s",marginLeft:"auto"}}
+              onMouseOver={e=>{e.currentTarget.style.background="rgba(168,192,255,0.15)"}}
+              onMouseOut={e=>{e.currentTarget.style.background="rgba(168,192,255,0.08)"}}>
+              + В библиотеку
             </button>
           </div>
-          {selPost===i&&(
-            <div style={{borderTop:"1px solid rgba(59,111,255,0.1)",padding:"10px 16px",background:"rgba(59,111,255,0.02)"}}>
-              {genRep&&<div style={{...u(10,C.muted),fontStyle:"italic",animation:"neonFlicker 1s infinite"}}>Генерирую ответы...</div>}
+
+          {/* Ответы */}
+          {selPost===i && (
+            <div style={{borderTop:"1px solid rgba(168,192,255,0.06)",padding:"10px 16px",background:"rgba(168,192,255,0.02)"}}>
+              {genRep && <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A5570",fontStyle:"italic",marginBottom:8}}>Генерирую ответы...</div>}
               {replies.map((r,ri)=>(
-                <div key={ri} style={{padding:"6px 0",borderTop:ri?"1px solid rgba(59,111,255,0.06)":"none"}}>
-                  <div style={u(10,C.ink2)}><span style={u(9,C.muted)}>{r.user}:</span> {r.comment}</div>
-                  <div style={{...u(10.5,C.terra),paddingLeft:12,borderLeft:`2px solid rgba(59,111,255,0.3)`,marginTop:4}}>{r.reply}</div>
+                <div key={ri} style={{padding:"7px 0",borderTop:ri?"1px solid rgba(168,192,255,0.05)":"none"}}>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#C8D4F0"}}>
+                    <span style={{color:"#4A5570",fontSize:10}}>{r.user}:</span> {r.comment}
+                  </div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#A8C0FF",paddingLeft:12,borderLeft:"2px solid rgba(168,192,255,0.2)",marginTop:4}}>{r.reply}</div>
                 </div>
               ))}
             </div>
