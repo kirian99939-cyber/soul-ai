@@ -1497,6 +1497,42 @@ function ArcTab({ persona, onSave }) {
   const [genning,setGenning]= useState(false);
   const [selDay, setSelDay] = useState(null);
   const [saved,  setSaved]  = useState({});
+  const [arcPhotos, setArcPhotos] = useState({});
+  const [arcSelectedPhoto, setArcSelectedPhoto] = useState({});
+  const [genArcPhoto, setGenArcPhoto] = useState(null);
+
+  const generateArcPhoto = async (dayIndex, postText) => {
+    setGenArcPhoto(dayIndex);
+    try {
+      const starts = await Promise.all(Array.from({length:3}).map(() =>
+        fetch("/api/start-photo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ postText, persona }),
+        }).then(r => r.json())
+      ));
+      const taskIds = starts.map(s => s.taskId).filter(Boolean);
+      const results_ = new Array(taskIds.length).fill(null);
+      let resolved = 0;
+      const pollTask = async (taskId, i, attempt = 0) => {
+        if(attempt > 40) return;
+        await new Promise(r => setTimeout(r, attempt === 0 ? 8000 : 6000));
+        const res = await fetch(`/api/poll-photo?taskId=${taskId}`);
+        const data = await res.json();
+        if(data.imageUrl) {
+          results_[i] = data.imageUrl;
+          resolved++;
+          if(resolved === 1) setGenArcPhoto(null);
+          setArcPhotos(prev => ({ ...prev, [dayIndex]: results_.filter(Boolean) }));
+          setArcSelectedPhoto(prev => ({ ...prev, [dayIndex]: 0 }));
+        } else if(data.status !== "failed") {
+          await pollTask(taskId, i, attempt + 1);
+        }
+      };
+      await Promise.all(taskIds.map((id, i) => pollTask(id, i)));
+    } catch(e) { console.error(e); }
+    setGenArcPhoto(null);
+  };
 
   const st    = persona.state || ST_DEF;
   const soul  = persona.soul  || {};
@@ -1822,6 +1858,37 @@ ${ptB}
                   </div>
                 </div>
 
+                {/* Фото дня */}
+                {arcPhotos[selDay]?.length > 0 && (
+                  <div style={{padding:"0 18px 12px"}}>
+                    <img src={arcPhotos[selDay][arcSelectedPhoto[selDay]||0]} alt="arc photo"
+                      style={{width:"100%",maxHeight:280,objectFit:"cover",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)"}}/>
+                    {arcPhotos[selDay].length > 1 && (
+                      <div style={{display:"flex",gap:5,marginTop:6}}>
+                        {arcPhotos[selDay].map((url,pi)=>(
+                          <div key={pi} onClick={()=>setArcSelectedPhoto(prev=>({...prev,[selDay]:pi}))}
+                            style={{width:48,height:48,borderRadius:7,overflow:"hidden",cursor:"pointer",
+                              border:`2px solid ${(arcSelectedPhoto[selDay]||0)===pi?"#A8C0FF":"transparent"}`,
+                              opacity:(arcSelectedPhoto[selDay]||0)===pi?1:0.5}}>
+                            <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div style={{padding:"0 18px 10px"}}>
+                  <button onClick={()=>generateArcPhoto(selDay, arc[selDay]?.post)}
+                    disabled={genArcPhoto===selDay}
+                    style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
+                      color:genArcPhoto===selDay?"#4A5570":"#FFD580",
+                      background:"rgba(255,213,128,0.08)",border:"1px solid rgba(255,213,128,0.2)",
+                      borderRadius:8,padding:"8px",cursor:genArcPhoto===selDay?"wait":"pointer"}}>
+                    {genArcPhoto===selDay?"⟳ Генерирую фото...":"📸 Сгенерировать фото к дню"}
+                  </button>
+                </div>
+
                 {/* Navigation */}
                 <div style={{padding:"8px 18px", borderTop:"1px solid rgba(59,111,255,0.06)",
                   display:"flex", justifyContent:"space-between", alignItems:"center"}}>
@@ -1922,6 +1989,42 @@ function RemixTab({ persona }) {
   const [liveSource, setLiveSource] = useState("example");
   const [lastFetch, setLastFetch] = useState(null);
   const [fetching, setFetching] = useState(false);
+  const [remixPhotos, setRemixPhotos] = useState({});
+  const [remixSelectedPhoto, setRemixSelectedPhoto] = useState({});
+  const [genRemixPhoto, setGenRemixPhoto] = useState(null);
+
+  const generateRemixPhoto = async (postId, postText) => {
+    setGenRemixPhoto(postId);
+    try {
+      const starts = await Promise.all(Array.from({length:3}).map(() =>
+        fetch("/api/start-photo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ postText, persona }),
+        }).then(r => r.json())
+      ));
+      const taskIds = starts.map(s => s.taskId).filter(Boolean);
+      const results_ = new Array(taskIds.length).fill(null);
+      let resolved = 0;
+      const pollTask = async (taskId, i, attempt = 0) => {
+        if(attempt > 40) return;
+        await new Promise(r => setTimeout(r, attempt === 0 ? 8000 : 6000));
+        const res = await fetch(`/api/poll-photo?taskId=${taskId}`);
+        const data = await res.json();
+        if(data.imageUrl) {
+          results_[i] = data.imageUrl;
+          resolved++;
+          if(resolved === 1) setGenRemixPhoto(null);
+          setRemixPhotos(prev => ({ ...prev, [postId]: results_.filter(Boolean) }));
+          setRemixSelectedPhoto(prev => ({ ...prev, [postId]: 0 }));
+        } else if(data.status !== "failed") {
+          await pollTask(taskId, i, attempt + 1);
+        }
+      };
+      await Promise.all(taskIds.map((id, i) => pollTask(id, i)));
+    } catch(e) { console.error(e); }
+    setGenRemixPhoto(null);
+  };
 
   useEffect(()=>{
     (async()=>{
@@ -2131,6 +2234,36 @@ function RemixTab({ persona }) {
                   <div style={{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:13.5,color:"#F0F4FF",lineHeight:1.7}}>
                     {remixed}
                   </div>
+
+                  {/* Фото к ремиксу */}
+                  {remixPhotos[post.id]?.length > 0 && (
+                    <div style={{marginTop:10}}>
+                      <img src={remixPhotos[post.id][remixSelectedPhoto[post.id]||0]} alt="photo"
+                        style={{width:"100%",maxHeight:280,objectFit:"cover",borderRadius:10,display:"block",border:"1px solid rgba(168,192,255,0.1)"}}/>
+                      {remixPhotos[post.id].length > 1 && (
+                        <div style={{display:"flex",gap:5,marginTop:6}}>
+                          {remixPhotos[post.id].map((url,pi)=>(
+                            <div key={pi} onClick={()=>setRemixSelectedPhoto(prev=>({...prev,[post.id]:pi}))}
+                              style={{width:48,height:48,borderRadius:7,overflow:"hidden",cursor:"pointer",
+                                border:`2px solid ${(remixSelectedPhoto[post.id]||0)===pi?"#A8C0FF":"transparent"}`,
+                                opacity:(remixSelectedPhoto[post.id]||0)===pi?1:0.5}}>
+                              <img src={url} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Кнопка генерации фото */}
+                  <button onClick={()=>generateRemixPhoto(post.id, results[post.id]||post.text)}
+                    disabled={genRemixPhoto===post.id}
+                    style={{marginTop:8,width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
+                      color:genRemixPhoto===post.id?"#4A5570":"#FFD580",
+                      background:"rgba(255,213,128,0.08)",border:"1px solid rgba(255,213,128,0.2)",
+                      borderRadius:8,padding:"7px",cursor:genRemixPhoto===post.id?"wait":"pointer"}}>
+                    {genRemixPhoto===post.id?"⟳ Генерирую фото...":"📸 Сгенерировать фото к посту"}
+                  </button>
                 </div>
               )}
             </div>
