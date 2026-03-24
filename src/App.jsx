@@ -1109,7 +1109,7 @@ function MindTab({persona, onChange}) {
 }
 
 // ── STUDIO TAB ───────────────────────────────────────────
-function StudioTab({persona, onSave}) {
+function StudioTab({persona, onSave, onSavePhoto}) {
   const [niches,   setNiches]   = useState(persona.niches  || ["fashion","travel","self"]);
   const [formats,  setFormats]  = useState(persona.formats || ["story","hot","reply","vuln"]);
   const [ctx,      setCtx]      = useState(persona.context || "");
@@ -1221,6 +1221,7 @@ function StudioTab({persona, onSave}) {
           resolved++;
           // Update photos array as results come in
           setPhotos(prev => ({ ...prev, [index]: results.filter(Boolean) }));
+          if(onSavePhoto) results.filter(Boolean).forEach(url => onSavePhoto({ imageUrl: url, postText, context: "studio" }));
           setSelectedPhoto(prev => ({ ...prev, [index]: 0 }));
           if(resolved >= taskIds.length) setGenPhoto(null);
           return;
@@ -1520,7 +1521,7 @@ function StudioTab({persona, onSave}) {
 }
 
 // ── ARC TAB ───────────────────────────────────────────────
-function ArcTab({ persona, onSave }) {
+function ArcTab({ persona, onSave, onSavePhoto }) {
   const [ptA,    setPtA]    = useState(persona.context || "Стамбул, день 47. Тревога затихает. Через 3 дня — Грузия.");
   const [ptB,    setPtB]    = useState("Тбилиси. Неделя одна в горах. Впервые не планирует следующий шаг. Доверяет моменту.");
   const [days,   setDays]   = useState(7);
@@ -1559,7 +1560,12 @@ function ArcTab({ persona, onSave }) {
           results_[i] = data.imageUrl;
           resolved++;
           if(resolved === 1) setGenArcPhoto(prev => ({...prev, [key]: false}));
-          setArcPhotos(prev => ({ ...prev, [key]: results_.filter(Boolean) }));
+          setArcPhotos(prev => {
+            const updated = { ...prev, [key]: results_.filter(Boolean) };
+            saveData("arc_photos_" + persona.id, updated).catch(console.error);
+            if(onSavePhoto) results_.filter(Boolean).forEach(url => onSavePhoto({ imageUrl: url, postText, context: "arc" }));
+            return updated;
+          });
           setArcSelectedPhoto(prev => ({ ...prev, [key]: 0 }));
         } else if(data.status !== "failed") {
           await pollTask(taskId, i, attempt + 1);
@@ -1573,6 +1579,9 @@ function ArcTab({ persona, onSave }) {
   useEffect(()=>{
     loadData("arcs_" + persona.id).then(data => {
       if(data?.length) setSavedArcs(data);
+    }).catch(()=>{});
+    loadData("arc_photos_" + persona.id).then(data => {
+      if(data) setArcPhotos(data);
     }).catch(()=>{});
   }, [persona.id]);
 
@@ -2100,7 +2109,7 @@ const REMIX_EXAMPLES = [
   },
 ];
 
-function RemixTab({ persona }) {
+function RemixTab({ persona, onSavePhoto }) {
   const [custom,    setCustom]   = useState("");
   const [remixing,  setRemixing] = useState(null); // post id being remixed
   const [results,   setResults]  = useState({});   // {postId: remixedText}
@@ -2136,6 +2145,7 @@ function RemixTab({ persona }) {
           resolved++;
           if(resolved === 1) setGenRemixPhoto(null);
           setRemixPhotos(prev => ({ ...prev, [postId]: results_.filter(Boolean) }));
+          if(onSavePhoto) results_.filter(Boolean).forEach(url => onSavePhoto({ imageUrl: url, postText, context: "remix" }));
           setRemixSelectedPhoto(prev => ({ ...prev, [postId]: 0 }));
         } else if(data.status !== "failed") {
           await pollTask(taskId, i, attempt + 1);
@@ -2616,6 +2626,79 @@ function CreateModal({onClose, onCreate}) {
 }
 
 // ═══════════════════════════════════════════════════════
+// ── PHOTOS TAB ──────────────────────────────────────────
+function PhotosTab({ photos, onDelete }) {
+  const [filter, setFilter] = useState("all");
+  const filtered = filter === "all" ? photos : photos.filter(p => p.context === filter);
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:18,border:"1px solid rgba(168,192,255,0.07)",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontFamily:"'Unbounded',sans-serif",fontSize:13,fontWeight:700,color:"#F0F4FF",letterSpacing:"0.04em"}}>Галерея фото</div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570",marginTop:3}}>{photos.length} фото всего</div>
+        </div>
+        <div style={{display:"flex",gap:4}}>
+          {[{id:"all",l:"Все"},{id:"studio",l:"Studio"},{id:"arc",l:"Арка"},{id:"remix",l:"Ремикс"}].map(f=>(
+            <button key={f.id} onClick={()=>setFilter(f.id)}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:600,
+                color:filter===f.id?"#060914":"#7888AA",
+                background:filter===f.id?"#A8C0FF":"rgba(168,192,255,0.06)",
+                border:"none",borderRadius:8,padding:"5px 10px",cursor:"pointer"}}>
+              {f.l}
+            </button>
+          ))}
+        </div>
+      </div>
+      {filtered.length === 0 ? (
+        <div style={{background:"rgba(255,255,255,0.03)",borderRadius:18,border:"1px solid rgba(168,192,255,0.06)",padding:"48px",textAlign:"center"}}>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"#4A5570"}}>Фото ещё нет — генерируй в Studio, Арке или Ремиксе</div>
+        </div>
+      ) : (
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+          {filtered.map(photo => (
+            <div key={photo.id} style={{background:"rgba(255,255,255,0.03)",borderRadius:14,border:"1px solid rgba(168,192,255,0.07)",overflow:"hidden",position:"relative"}}>
+              <img src={photo.imageUrl} alt="generated"
+                style={{width:"100%",aspectRatio:"4/5",objectFit:"contain",background:"rgba(168,192,255,0.03)",display:"block",cursor:"pointer"}}
+                onClick={()=>window.open(photo.imageUrl,"_blank")}/>
+              <div style={{padding:"8px 10px"}}>
+                {photo.postText && (
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:9.5,color:"#7888AA",lineHeight:1.4,marginBottom:6,
+                    overflow:"hidden",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>
+                    {photo.postText.slice(0,80)}...
+                  </div>
+                )}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570"}}>
+                    {photo.context} · {new Date(photo.createdAt).toLocaleDateString("ru",{day:"numeric",month:"short"})}
+                  </span>
+                  <div style={{display:"flex",gap:4}}>
+                    <button onClick={async()=>{
+                      try {
+                        const res = await fetch(photo.imageUrl);
+                        const blob = await res.blob();
+                        const a = document.createElement("a");
+                        a.href = URL.createObjectURL(blob);
+                        a.download = `soul-ai-${Date.now()}.jpg`;
+                        a.click();
+                      } catch(e){ window.open(photo.imageUrl,"_blank"); }
+                    }} style={{background:"rgba(168,192,255,0.08)",border:"1px solid rgba(168,192,255,0.15)",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#A8C0FF"}}>
+                      ↓
+                    </button>
+                    <button onClick={()=>onDelete(photo.id)}
+                      style={{background:"rgba(255,96,96,0.08)",border:"1px solid rgba(255,96,96,0.15)",borderRadius:6,padding:"3px 7px",cursor:"pointer",fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#FF6060"}}>
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 //  ROOT APP
 // ═══════════════════════════════════════════════════════
 export default function PersonaOS() {
@@ -2627,6 +2710,7 @@ export default function PersonaOS() {
   const [loaded,   setLoaded]   = useState(false);
   const [sideOpen, setSideOpen] = useState(true);
   const [delConfirm, setDelConfirm] = useState(null);
+  const [allPhotos, setAllPhotos] = useState([]);
 
   // ── LOAD ─────────────────────────────────────────────
   useEffect(()=>{
@@ -2675,6 +2759,13 @@ export default function PersonaOS() {
           setPersonas([lera]); setSelId(lera.id);
         }
         if(savedContent?.length) setContent(savedContent);
+        // Load photos
+        const firstId = personasWithPhotos?.[0]?.id || savedPersonas?.[0]?.id;
+        if(firstId) {
+          loadData("all_photos_" + firstId).then(data => {
+            if(data?.length) setAllPhotos(data);
+          }).catch(()=>{});
+        }
       } catch(e){ console.error("Load error:",e); }
       console.log("=== setLoaded(true) ===");
       setLoaded(true);
@@ -2697,6 +2788,23 @@ export default function PersonaOS() {
     setSelId(p.id); setCreating(false); setTab("soul");
   };
   const updatePersona = (id,key,val) => setPersonas(prev=>prev.map(p=>p.id===id?{...p,[key]:val}:p));
+
+  const savePhoto = ({imageUrl, postText, context}) => {
+    const photo = { id: uid(), personaId: selId, imageUrl, context, postText: postText||"", createdAt: now() };
+    setAllPhotos(prev => {
+      const updated = [photo, ...prev];
+      saveData("all_photos_" + selId, updated).catch(console.error);
+      return updated;
+    });
+  };
+
+  const deletePhoto = id => {
+    setAllPhotos(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      saveData("all_photos_" + selId, updated).catch(console.error);
+      return updated;
+    });
+  };
   const deletePersona = id => {
     setPersonas(prev=>{
       const next=prev.filter(p=>p.id!==id);
@@ -2738,7 +2846,7 @@ export default function PersonaOS() {
     </div>
   );
 
-  const TABS = [{id:"soul",l:"✦ Душа"},{id:"mind",l:"◉ Сознание"},{id:"arc",l:"↗ Арка"},{id:"studio",l:"⚡ Studio"},{id:"remix",l:"🔀 Ремикс"},{id:"library",l:"◻ Библиотека"}];
+  const TABS = [{id:"soul",l:"✦ Душа"},{id:"mind",l:"◉ Сознание"},{id:"arc",l:"↗ Арка"},{id:"studio",l:"⚡ Studio"},{id:"remix",l:"🔀 Ремикс"},{id:"photos",l:"🖼 Фото"},{id:"library",l:"◻ Библиотека"}];
 
   return (
     <div style={{display:"flex",minHeight:"100vh",fontFamily:F.b,background:"#060914",position:"relative",overflow:"hidden"}}>
@@ -2924,9 +3032,10 @@ export default function PersonaOS() {
                   updatePersona(sel.id,k,v);
                 }}/></div>
                 <div style={{display:tab==="mind"?"block":"none"}}><MindTab key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/></div>
-                <div style={{display:tab==="arc"?"block":"none"}}><ArcTab key={sel.id} persona={sel} onSave={saveContent}/></div>
-                <div style={{display:tab==="studio"?"block":"none"}}><StudioTab key={sel.id} persona={sel} onSave={saveContent}/></div>
-                <div style={{display:tab==="remix"?"block":"none"}}><RemixTab key={sel.id} persona={sel}/></div>
+                <div style={{display:tab==="arc"?"block":"none"}}><ArcTab key={sel.id} persona={sel} onSave={saveContent} onSavePhoto={savePhoto}/></div>
+                <div style={{display:tab==="studio"?"block":"none"}}><StudioTab key={sel.id} persona={sel} onSave={saveContent} onSavePhoto={savePhoto}/></div>
+                <div style={{display:tab==="remix"?"block":"none"}}><RemixTab key={sel.id} persona={sel} onSavePhoto={savePhoto}/></div>
+                <div style={{display:tab==="photos"?"block":"none"}}><PhotosTab photos={allPhotos.filter(p=>p.personaId===sel.id)} onDelete={deletePhoto}/></div>
                 <div style={{display:tab==="library"?"block":"none"}}><LibraryTab personaId={sel.id} content={content} onStatusChange={updateStatus} onDelete={deleteContent}/></div>
               </div>
             </div>
