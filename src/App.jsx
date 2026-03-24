@@ -2834,15 +2834,15 @@ export default function PersonaOS() {
             {/* Content */}
             <div style={{flex:1,overflowY:"auto",padding:"20px 28px 60px"}}>
               <div style={{maxWidth:920,margin:"0 auto",animation:"fadeUp .35s ease"}}>
-                {tab==="soul"    && <SoulEditor key={sel.id} persona={sel} onChange={async (k,v)=>{
+                <div style={{display:tab==="soul"?"block":"none"}}><SoulEditor key={sel.id} persona={sel} onChange={async (k,v)=>{
                   if(k==="referencePhotos") await saveReferencePhotos(sel.id, v);
                   updatePersona(sel.id,k,v);
-                }}/>}
-                {tab==="mind"    && <MindTab    key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/>}
-                {tab==="arc"     && <ArcTab     key={sel.id} persona={sel} onSave={saveContent}/>}
-                {tab==="studio"  && <StudioTab  key={sel.id} persona={sel} onSave={saveContent}/> }
-                {tab==="remix"   && <RemixTab   key={sel.id} persona={sel}/>}
-                {tab==="library" && <LibraryTab personaId={sel.id} content={content} onStatusChange={updateStatus} onDelete={deleteContent}/>}
+                }}/></div>
+                <div style={{display:tab==="mind"?"block":"none"}}><MindTab key={sel.id} persona={sel} onChange={(k,v)=>updatePersona(sel.id,k,v)}/></div>
+                <div style={{display:tab==="arc"?"block":"none"}}><ArcTab key={sel.id} persona={sel} onSave={saveContent}/></div>
+                <div style={{display:tab==="studio"?"block":"none"}}><StudioTab key={sel.id} persona={sel} onSave={saveContent}/></div>
+                <div style={{display:tab==="remix"?"block":"none"}}><RemixTab key={sel.id} persona={sel}/></div>
+                <div style={{display:tab==="library"?"block":"none"}}><LibraryTab personaId={sel.id} content={content} onStatusChange={updateStatus} onDelete={deleteContent}/></div>
               </div>
             </div>
           </>
