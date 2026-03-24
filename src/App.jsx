@@ -195,6 +195,9 @@ const LERA_SOUL = {
   style:"Качественно, не вычурно. Женственно, не вульгарно. Просто, но с характером.",
   taboo:"Политика, бодишейминг, мат, показной люкс, «ты должна», агрессивные продажи",
   catchphrases:"«Жизнь нельзя откладывать», «Страшно — не значит не моё», «Я не черновик»",
+  manifesto:"Жадная до жизни — и не извиняюсь за это.",
+  audience:"Женщины 25-45, которые боятся разрешить себе жить",
+  contentStrategy:"Каждый пост — удар по внутреннему цензору. Не учу, не мотивирую — живу вслух. Это само по себе освобождает.",
 };
 const EMPTY_SOUL = () => ({
   psycho:{mbti:"",temperament:"",enneagram:"",attachment:""},archetypes:"",
@@ -219,6 +222,9 @@ const buildPrompt = (p, sel, ctx, num) => {
 ГОЛОСА: ${voices}
 СТИЛЬ: ${s.style||""}
 ТАБУ: ${s.taboo||""}
+${s.manifesto ? `МАНИФЕСТ АККАУНТА: ${s.manifesto}` : ""}
+${s.audience ? `АУДИТОРИЯ: ${s.audience}` : ""}
+${s.contentStrategy ? `СТРАТЕГИЯ: ${s.contentStrategy}` : ""}
 
 СОСТОЯНИЕ:
 Настроение: ${st.mood}%, Энергия: ${st.energy}%, Уверенность: ${st.confidence}%, Тревога: ${st.anxiety}%, Креативность: ${st.creativity}%
@@ -893,6 +899,32 @@ function SoulEditor({persona, onChange}) {
           </div>
         )
       ))}
+
+      {/* ── MANIFESTO ── */}
+      <div style={{background:"rgba(168,192,255,0.04)",borderRadius:16,padding:"16px 20px",border:"1px solid rgba(168,192,255,0.12)",marginBottom:10}}>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3,color:"#A8C0FF",textTransform:"uppercase",marginBottom:12}}>Манифест аккаунта</div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>Ключевая мысль</div>
+          <Ed value={soul.manifesto||""} onChange={v=>onChange("soul",{...soul,manifesto:v})}
+            style={{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:16,color:"#F0F4FF",fontStyle:"italic",lineHeight:1.4}}
+            ph="Главная мысль аккаунта..."/>
+        </div>
+
+        <div style={{marginBottom:12}}>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>Аудитория</div>
+          <Ed value={soul.audience||""} onChange={v=>onChange("soul",{...soul,audience:v})}
+            style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0"}}
+            ph="Кто читает..."/>
+        </div>
+
+        <div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:1.5,textTransform:"uppercase",marginBottom:5}}>Стратегия контента</div>
+          <Ed value={soul.contentStrategy||""} onChange={v=>onChange("soul",{...soul,contentStrategy:v})}
+            style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
+            ph="Что даёт аккаунт читателю..." multi/>
+        </div>
+      </div>
 
       {/* ── STYLE / TABOO / CATCHPHRASES ── */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
@@ -1608,6 +1640,9 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
 Раны: ${wounds}
 Страхи: ${fears}
 Голос: живой, уязвимый, без позы. Разговорный, на «ты».
+${soul.manifesto ? `МАНИФЕСТ: ${soul.manifesto}` : ""}
+${soul.audience ? `АУДИТОРИЯ: ${soul.audience}` : ""}
+${soul.contentStrategy ? `СТРАТЕГИЯ: ${soul.contentStrategy}` : ""}
 
 ТЕКУЩЕЕ СОСТОЯНИЕ (Точка А):
 ${ptA}
