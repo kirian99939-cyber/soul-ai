@@ -1321,13 +1321,31 @@ function StudioTab({persona, onSave}) {
             </div>
           )}
 
+          {/* Сгенерированное фото */}
+          {photos[i] && (
+            <div style={{padding:"0 16px 12px"}}>
+              <img src={photos[i]} alt="generated"
+                style={{width:"100%",borderRadius:12,display:"block",border:"1px solid rgba(168,192,255,0.1)"}}/>
+            </div>
+          )}
+
           {/* Кнопки действий */}
-          <div style={{padding:"10px 16px",display:"flex",gap:8}}>
+          <div style={{padding:"10px 16px",display:"flex",gap:8,flexWrap:"wrap"}}>
             <button onClick={()=>{setSelPost(selPost===i?null:i); if(selPost!==i) genReplies(p.text);}}
               style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,color:"#7888AA",background:"rgba(168,192,255,0.05)",border:"1px solid rgba(168,192,255,0.1)",borderRadius:8,padding:"6px 12px",cursor:"pointer",transition:"all .15s"}}
               onMouseOver={e=>{e.currentTarget.style.color="#A8C0FF";e.currentTarget.style.borderColor="rgba(168,192,255,0.25)"}}
               onMouseOut={e=>{e.currentTarget.style.color="#7888AA";e.currentTarget.style.borderColor="rgba(168,192,255,0.1)"}}>
               💬 Смоделировать ответы
+            </button>
+            <button onClick={()=>generatePhoto(i, p.text)} disabled={genPhoto===i}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
+                color:genPhoto===i?"#4A5570":"#FFD580",
+                background:"rgba(255,213,128,0.08)",
+                border:"1px solid rgba(255,213,128,0.2)",
+                borderRadius:8,padding:"6px 14px",cursor:genPhoto===i?"wait":"pointer",transition:"all .15s"}}
+              onMouseOver={e=>e.currentTarget.style.background="rgba(255,213,128,0.15)"}
+              onMouseOut={e=>e.currentTarget.style.background="rgba(255,213,128,0.08)"}>
+              {genPhoto===i ? "⟳ Генерирую..." : "📸 Фото"}
             </button>
             <button onClick={()=>{onSave({id:uid(),personaId:persona.id,platform:"threads",text:p.text,format:p.format||"",topic:p.topic||"",tag:p.tag||"",why:p.why||"",status:"draft",createdAt:now()}); }}
               style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,color:"#A8C0FF",background:"rgba(168,192,255,0.08)",border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,padding:"6px 14px",cursor:"pointer",transition:"all .15s",marginLeft:"auto"}}
