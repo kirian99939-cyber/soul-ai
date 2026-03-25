@@ -2569,6 +2569,32 @@ const StatusDot = {
 function LibraryTab({personaId, content, onStatusChange, onDelete}) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [publishing, setPublishing] = useState(null);
+  const [publishedUrls, setPublishedUrls] = useState({});
+
+  const publishPost = async (item) => {
+    setPublishing(item.id);
+    try {
+      const r = await fetch("/api/publish-threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: item.text,
+          imageUrl: item.imageUrl || null,
+        }),
+      });
+      const d = await r.json();
+      console.log("Publish result:", d);
+
+      if(d.success || d.mock) {
+        onStatusChange(item.id, "published");
+        if(d.url) setPublishedUrls(prev => ({ ...prev, [item.id]: d.url }));
+      }
+    } catch(e) {
+      console.error("Publish error:", e);
+    }
+    setPublishing(null);
+  };
   const items = content
     .filter(c=>c.personaId===personaId)
     .filter(c=>filter==="all"||c.status===filter)
@@ -2620,11 +2646,55 @@ function LibraryTab({personaId, content, onStatusChange, onDelete}) {
           <div style={{borderTop:"1px solid rgba(59,111,255,0.08)",padding:"8px 16px",display:"flex",gap:6,background:"rgba(59,111,255,0.02)"}}>
             <button onClick={()=>navigator.clipboard?.writeText(item.text)} style={{...u(9,C.muted),background:"none",border:"1px solid rgba(59,111,255,0.1)",borderRadius:6,padding:"4px 10px",cursor:"pointer"}}>📋 Копировать</button>
             {item.status!=="approved"  &&<button onClick={()=>onStatusChange(item.id,"approved")}  style={{...u(9,C.sage,600),background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.25)",borderRadius:6,padding:"4px 10px",cursor:"pointer"}}>✓ Одобрить</button>}
-            {item.status!=="published" &&<button onClick={()=>onStatusChange(item.id,"published")} style={{...u(9,C.teal,600),background:"rgba(6,182,212,0.08)",border:"1px solid rgba(6,182,212,0.2)",borderRadius:6,padding:"4px 10px",cursor:"pointer"}}>🚀 Опубликован</button>}
+            {item.status!=="published" && (
+              <button
+                onClick={() => publishPost(item)}
+                disabled={publishing === item.id}
+                style={{
+                  fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
+                  color:publishing===item.id?"#4A5570":"#060914",
+                  background:publishing===item.id?"rgba(168,192,255,0.1)":"#A8C0FF",
+                  border:"none",borderRadius:8,padding:"6px 14px",
+                  cursor:publishing===item.id?"wait":"pointer",
+                  transition:"all .2s",
+                  boxShadow:publishing===item.id?"none":"0 0 16px rgba(168,192,255,0.3)",
+                }}>
+                {publishing===item.id ? "⟳ Публикую..." : "🚀 В Threads"}
+              </button>
+            )}
+            {item.status === "published" && publishedUrls[item.id] && (
+              <a href={publishedUrls[item.id]} target="_blank" rel="noopener noreferrer"
+                style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#80FFCC",
+                  textDecoration:"none",border:"1px solid rgba(128,255,204,0.2)",
+                  borderRadius:8,padding:"6px 12px"}}>
+                ↗ Открыть в Threads
+              </a>
+            )}
             {item.status!=="draft"     &&<button onClick={()=>onStatusChange(item.id,"draft")}     style={{...u(9,C.muted),background:"rgba(59,111,255,0.04)",border:"1px solid rgba(59,111,255,0.1)",borderRadius:6,padding:"4px 10px",cursor:"pointer"}}>← Черновик</button>}
             <div style={{flex:1}}/>
             <button onClick={()=>onDelete(item.id)} style={{...u(9,C.danger),background:"none",border:"none",cursor:"pointer",opacity:0.6,transition:"opacity .15s"}} onMouseOver={e=>e.currentTarget.style.opacity="1"} onMouseOut={e=>e.currentTarget.style.opacity="0.6"}>✕</button>
           </div>
+          {item.status === "approved" && (
+            <div style={{padding:"0 16px 8px",display:"flex",gap:6,alignItems:"center"}}>
+              <input
+                type="datetime-local"
+                onChange={e => {
+                  const scheduled = e.target.value;
+                  onStatusChange(item.id, "approved", scheduled);
+                }}
+                style={{
+                  fontFamily:"'DM Sans',sans-serif",fontSize:9,
+                  background:"rgba(168,192,255,0.04)",
+                  border:"1px solid rgba(168,192,255,0.15)",
+                  borderRadius:8,padding:"4px 8px",color:"#C8D4F0",
+                  outline:"none",cursor:"pointer",
+                }}
+              />
+              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,color:"#4A5570"}}>
+                запланировать
+              </span>
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -2946,7 +3016,7 @@ export default function PersonaOS() {
 
   // ── CONTENT CRUD ─────────────────────────────────────
   const saveContent = item => setContent(prev=>[item,...prev]);
-  const updateStatus = (id,status) => setContent(prev=>prev.map(c=>c.id===id?{...c,status}:c));
+  const updateStatus = (id,status,scheduledAt) => setContent(prev=>prev.map(c=>c.id===id?{...c,status,...(scheduledAt?{scheduledAt}:{})}:c));
   const deleteContent = id => setContent(prev=>prev.filter(c=>c.id!==id));
 
   const sel = personas.find(p=>p.id===selId);
