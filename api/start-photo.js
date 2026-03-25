@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season } = req.body || {};
+  const { postText, persona, season, city } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
@@ -83,11 +83,35 @@ export default async function handler(req, res) {
   const prompt = `${preset}. ${scene}. Season: ${seasonTag}. ${phoneStyle}. ${visualCode ? visualCode + "." : ""} Vertical 4:5, photorealistic, no text. IMPORTANT: no exotic animals, no scorpions, no motorcycles unless post explicitly mentions them.`;
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
 
+  // Get real Street View photos for location
+  let locationPhotos = [];
+  if(city) {
+    try {
+      const baseUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "http://localhost:3000";
+      const locRes = await fetch(
+        `${baseUrl}/api/location-photos?city=${encodeURIComponent(city)}`
+      );
+      const locData = await locRes.json();
+      if(locData.photos?.length) {
+        locationPhotos = locData.photos.slice(0, 2);
+        console.log("Got location photos for:", locData.city);
+      }
+    } catch(e) {
+      console.log("Location photos failed:", e.message);
+    }
+  }
+
+  // Merge: reference photos (Lera) + location photos
+  const allImageUrls = [
+    ...referencePhotos,
+    ...locationPhotos,
+  ].filter(Boolean).slice(0, 5);
+
   try {
     const r = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
-      body: JSON.stringify({ prompt, imageUrls: referencePhotos, resolution: "1K", aspectRatio: "4:5" }),
+      body: JSON.stringify({ prompt, imageUrls: allImageUrls, resolution: "1K", aspectRatio: "4:5" }),
     });
     const d = await r.json();
     const taskId = d?.data?.taskId;

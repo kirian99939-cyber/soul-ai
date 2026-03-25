@@ -1261,12 +1261,40 @@ function StudioTab({persona, onSave, onSavePhoto}) {
   const generatePhoto = async (index, postText, count = 3) => {
     setGenPhoto(index);
     try {
+      // Extract city from post text via Claude
+      let city = "";
+      try {
+        const cityRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY||"",
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 30,
+            messages: [{
+              role: "user",
+              content: `Найди название города или страны в тексте. Только название, без пояснений. Если нет — ответь NONE.\n\nТекст: "${postText}"`
+            }]
+          })
+        });
+        const cityData = await cityRes.json();
+        const detectedCity = cityData.content?.[0]?.text?.trim();
+        city = (detectedCity && detectedCity !== "NONE") ? detectedCity : "";
+        if(city) console.log("Detected city:", city);
+      } catch(e) {
+        console.log("City detection failed:", e.message);
+      }
+
       // Start generations simultaneously
       const starts = await Promise.all(Array.from({length: count}).map(() =>
         fetch("/api/start-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postText, persona, season: getSeasonVisual() }),
+          body: JSON.stringify({ postText, persona, season: getSeasonVisual(), city }),
         }).then(r => r.json())
       ));
 
