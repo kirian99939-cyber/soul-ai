@@ -195,6 +195,11 @@ const LERA_SOUL = {
   style:"Качественно, не вычурно. Женственно, не вульгарно. Просто, но с характером.",
   taboo:"Политика, бодишейминг, мат, показной люкс, «ты должна», агрессивные продажи",
   catchphrases:"«Жизнь нельзя откладывать», «Страшно — не значит не моё», «Я не черновик»",
+  job: "Руководитель клиентского сервиса (бывший). Сейчас — фриланс-консультант по сервису онлайн.",
+  hobbies: ["акварель и скетчинг", "сёрфинг", "локальная еда и рынки", "фотография на плёнку", "йога на рассвете"],
+  lifeGoal: "Объехать 50 стран до 35 лет. Написать честную книгу о страхе и свободе.",
+  dailyRhythm: "Подъём с солнцем, кофе и скетчбук. Вечером — длинные прогулки и местные бары.",
+  currentObsession: "Акварельные зарисовки городов. Каждый новый город — новый скетч.",
   manifesto:"Жадная до жизни — и не извиняюсь за это.",
   audience:"Женщины 25-45, у которых внутри живёт такая же Лера — но пока заперта.",
   contentStrategy:"Каждый день как последний. Каждая история — как кадр из фильма. Безумие с рефлексией: прыжок с парашютом + мысль о страхе. Никакой серости, никакой паузы.",
@@ -228,6 +233,13 @@ ${s.manifesto ? `МАНИФЕСТ АККАУНТА: ${s.manifesto}` : ""}
 ${s.audience ? `АУДИТОРИЯ: ${s.audience}` : ""}
 ${s.contentStrategy ? `СТРАТЕГИЯ: ${s.contentStrategy}` : ""}
 ${s.contentCode ? `КОД КОНТЕНТА: ${s.contentCode}` : ""}
+${s.job ? `\nРАБОТА: ${s.job}` : ""}
+${s.hobbies?.length ? `\nУВЛЕЧЕНИЯ: ${s.hobbies.join(", ")}` : ""}
+${s.lifeGoal ? `\nЦЕЛЬ ЖИЗНИ: ${s.lifeGoal}` : ""}
+${s.currentObsession ? `\nТЕКУЩАЯ ОДЕРЖИМОСТЬ: ${s.currentObsession}` : ""}
+${s.dailyRhythm ? `\nРИТМ ДНЯ: ${s.dailyRhythm}` : ""}
+
+Посты должны естественно отражать увлечения — если она любит акварель, иногда упоминает скетчбук. Если сёрфинг — море. Органично, не навязчиво.
 
 Каждый пост должен соответствовать этому ДНК.
 
@@ -945,6 +957,79 @@ function SoulEditor({persona, onChange}) {
           <Ed value={soul.contentCode||""} onChange={v=>onChange("soul",{...soul,contentCode:v})}
             style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
             ph="Как строится каждый пост..." multi/>
+        </div>
+      </div>
+
+      {/* ── LIFE PROFILE ── */}
+      <div style={{background:"rgba(255,255,255,0.03)",borderRadius:16,border:"1px solid rgba(168,192,255,0.07)",overflow:"hidden"}}>
+        <div style={{padding:"13px 20px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid rgba(168,192,255,0.05)"}}>
+          <div style={{width:4,height:16,borderRadius:2,background:"linear-gradient(180deg,#80FFCC,#80E0FF)"}}/>
+          <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,fontWeight:700,letterSpacing:3,color:"#4A5570",textTransform:"uppercase"}}>Жизнь</span>
+        </div>
+        <div style={{padding:"14px 20px",display:"flex",flexDirection:"column",gap:12}}>
+
+          {/* Работа */}
+          <div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:2,textTransform:"uppercase",marginBottom:5}}>💼 Работа</div>
+            <Ed value={soul.job||""} onChange={v=>onChange("soul",{...soul,job:v})}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
+              ph="Чем занимается..." multi/>
+          </div>
+
+          {/* Увлечения */}
+          <div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>🎨 Увлечения</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+              {(soul.hobbies||[]).map((h,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:4,background:"rgba(128,255,204,0.08)",border:"1px solid rgba(128,255,204,0.2)",borderRadius:20,padding:"4px 10px"}}>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#80FFCC"}}>{h}</span>
+                  <button onClick={()=>{
+                    const updated = (soul.hobbies||[]).filter((_,j)=>j!==i);
+                    onChange("soul",{...soul,hobbies:updated});
+                  }} style={{background:"none",border:"none",cursor:"pointer",color:"#4A5570",fontSize:12,lineHeight:1,padding:0}}
+                  onMouseOver={e=>e.currentTarget.style.color="#FF6060"}
+                  onMouseOut={e=>e.currentTarget.style.color="#4A5570"}>×</button>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:6}}>
+              <input
+                placeholder="+ добавить увлечение..."
+                onKeyDown={e=>{
+                  if(e.key==="Enter" && e.target.value.trim()) {
+                    onChange("soul",{...soul,hobbies:[...(soul.hobbies||[]),e.target.value.trim()]});
+                    e.target.value="";
+                  }
+                }}
+                style={{flex:1,background:"rgba(168,192,255,0.04)",border:"1px solid rgba(168,192,255,0.12)",borderRadius:10,padding:"7px 12px",fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"#C8D4F0",outline:"none"}}
+              />
+            </div>
+          </div>
+
+          {/* Главная цель жизни */}
+          <div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:2,textTransform:"uppercase",marginBottom:5}}>🎯 Главная цель жизни</div>
+            <Ed value={soul.lifeGoal||""} onChange={v=>onChange("soul",{...soul,lifeGoal:v})}
+              style={{fontFamily:"'Cormorant Garamond',Georgia,serif",fontSize:14,color:"#F0F4FF",fontStyle:"italic",lineHeight:1.5}}
+              ph="К чему стремится..." multi/>
+          </div>
+
+          {/* Ритм дня */}
+          <div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:2,textTransform:"uppercase",marginBottom:5}}>⏰ Ритм дня</div>
+            <Ed value={soul.dailyRhythm||""} onChange={v=>onChange("soul",{...soul,dailyRhythm:v})}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
+              ph="Как выглядит обычный день..." multi/>
+          </div>
+
+          {/* Текущая одержимость */}
+          <div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#FFD580",letterSpacing:2,textTransform:"uppercase",marginBottom:5}}>✦ Текущая одержимость</div>
+            <Ed value={soul.currentObsession||""} onChange={v=>onChange("soul",{...soul,currentObsession:v})}
+              style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#FFD580",lineHeight:1.5}}
+              ph="Чем увлечена прямо сейчас..." multi/>
+          </div>
+
         </div>
       </div>
 
@@ -1734,6 +1819,13 @@ ${soul.manifesto ? `МАНИФЕСТ: ${soul.manifesto}` : ""}
 ${soul.audience ? `АУДИТОРИЯ: ${soul.audience}` : ""}
 ${soul.contentStrategy ? `СТРАТЕГИЯ: ${soul.contentStrategy}` : ""}
 ${soul.contentCode ? `КОД КОНТЕНТА: ${soul.contentCode}` : ""}
+${soul.job ? `\nРАБОТА: ${soul.job}` : ""}
+${soul.hobbies?.length ? `\nУВЛЕЧЕНИЯ: ${soul.hobbies.join(", ")}` : ""}
+${soul.lifeGoal ? `\nЦЕЛЬ ЖИЗНИ: ${soul.lifeGoal}` : ""}
+${soul.currentObsession ? `\nТЕКУЩАЯ ОДЕРЖИМОСТЬ: ${soul.currentObsession}` : ""}
+${soul.dailyRhythm ? `\nРИТМ ДНЯ: ${soul.dailyRhythm}` : ""}
+
+Посты должны естественно отражать увлечения — если она любит акварель, иногда упоминает скетчбук. Если сёрфинг — море. Органично, не навязчиво.
 
 ТЕКУЩАЯ ДАТА: ${new Date().toLocaleDateString("ru", {day:"numeric", month:"long", year:"numeric"})}
 СЕЗОН: ${getSeason()} — учитывай в деталях (одежда, погода, настроение)

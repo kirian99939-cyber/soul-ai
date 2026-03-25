@@ -44,6 +44,20 @@ export default async function handler(req, res) {
   if(t.includes("селф") || t.includes("зеркал"))
     shotPool.push(...Array(3).fill("selfie close-up, natural light, authentic expression"));
 
+  // Hobby-based shot types
+  const soul = persona?.soul;
+  if((soul?.hobbies||[]).some(h => h.includes("рисов") || h.includes("скетч") || h.includes("аквар")))
+    shotPool.push(...Array(2).fill("woman sketching or drawing in notebook, artistic lifestyle, cafe or outdoor"));
+
+  if((soul?.hobbies||[]).some(h => h.includes("фото") || h.includes("плёнк")))
+    shotPool.push(...Array(2).fill("woman holding film camera, photographer lifestyle, candid"));
+
+  if((soul?.hobbies||[]).some(h => h.includes("йога")))
+    shotPool.push(...Array(2).fill("woman doing yoga outdoors, morning practice, peaceful"));
+
+  if((soul?.hobbies||[]).some(h => h.includes("сёрф")))
+    shotPool.push(...Array(2).fill("woman near ocean with surfboard, beach lifestyle"));
+
   const shotType = shotPool[Math.floor(Math.random() * shotPool.length)];
 
   // Ask Claude for specific scene
