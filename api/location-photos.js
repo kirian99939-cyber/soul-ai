@@ -46,7 +46,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       photos: validPhotos,
-      photoUrls,
       city: formattedCity,
       coordinates: { lat, lng },
     });
