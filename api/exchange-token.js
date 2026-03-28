@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if(req.method === "OPTIONS") return res.status(200).end();
@@ -5,12 +7,14 @@ export default async function handler(req, res) {
   const secret = process.env.THREADS_APP_SECRET;
   const code = req.query.code;
 
-  if(!code || !secret) {
-    return res.status(500).json({ error: "Missing code or secret" });
-  }
+  if(!code || !secret) return res.status(500).json({ error: "Missing code or secret" });
+
+  const supabase = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.VITE_SUPABASE_ANON_KEY
+  );
 
   try {
-    // Step 1: code → short token
     const r1 = await fetch("https://graph.threads.net/oauth/access_token", {
       method: "POST",
       headers: {"Content-Type": "application/x-www-form-urlencoded"},
@@ -25,14 +29,9 @@ export default async function handler(req, res) {
     const d1 = await r1.json();
     if(!d1.access_token) return res.status(500).json({ error: "Step 1 failed", raw: d1 });
 
-    // Step 2: short → long token
-    const r2 = await fetch(`https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${secret}&access_token=${d1.access_token}`);
-    const d2 = await r2.json();
-    if(!d2.access_token) {
-      return res.status(200).json({ token: d1.access_token, user_id: String(d1.user_id), note: "short-lived only, 1hr" });
-    }
+    await supabase.from("soul_store").upsert({ key: "threads_token", value: d1.access_token });
 
-    return res.status(200).json({ token: d2.access_token, expires_in: d2.expires_in, user_id: String(d1.user_id) });
+    return res.status(200).json({ success: true, note: "token saved to supabase", user_id: String(d1.user_id) });
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
