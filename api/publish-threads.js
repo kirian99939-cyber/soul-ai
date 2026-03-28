@@ -3,7 +3,16 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
   if(req.method !== "POST") return res.status(405).end();
 
-  const token = process.env.THREADS_ACCESS_TOKEN;
+  const supabase = (await import("@supabase/supabase-js")).createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.VITE_SUPABASE_ANON_KEY
+  );
+  const { data: tokenData } = await supabase
+    .from("soul_store")
+    .select("value")
+    .eq("key", "threads_token")
+    .single();
+  const token = tokenData?.value || process.env.THREADS_ACCESS_TOKEN;
   const userId = process.env.THREADS_USER_ID;
 
   if(!token || !userId) {
