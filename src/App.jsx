@@ -3051,7 +3051,7 @@ export default function PersonaOS() {
         }
         if(savedContent?.length) setContent(savedContent);
         // Load photos
-        const firstId = personasWithPhotos?.[0]?.id || savedPersonas?.[0]?.id;
+        const firstId = savedPersonas?.[0]?.id;
         if(firstId) {
           loadData("all_photos_" + firstId).then(data => {
             if(data?.length) setAllPhotos(data);
