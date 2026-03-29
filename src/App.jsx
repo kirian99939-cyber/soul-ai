@@ -2147,6 +2147,13 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
   const [arcSelectedPhoto, setArcSelectedPhoto] = useState({});
   const [genArcPhoto, setGenArcPhoto] = useState({});
   const [arcPhotoCount, setArcPhotoCount] = useState(3);
+  const [arcArchetype, setArcArchetype] = useState(null);
+  const [arcSliders, setArcSliders] = useState({
+    intensity: 50,
+    vulnerability: 50,
+    tone: 50,
+    pace: 50,
+  });
 
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
@@ -2275,7 +2282,14 @@ ${ptB}
   "arcPhase": "спуск | плато | поворот | подъём | прорыв"
 }]
 ${soul.tov ? `\nТОН И ГОЛОС АВТОРА (строго соблюдай):\n${soul.tov}` : ""}
-${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.astroProfile}` : ""}`;
+${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.astroProfile}` : ""}
+${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — идёт на страшное и преодолевает",depth:"Погружение — уходит внутрь, медленно и честно",break:"Разрыв — что-то сломалось, боль и свобода",discovery:"Открытие — находит новое в себе и мире",masquerade:"Маскарад — играет роли, ищет себя"}[arcArchetype]}` : ""}
+
+НАСТРОЙКИ:
+- Интенсивность: ${arcSliders.intensity}/100 (${arcSliders.intensity < 30 ? "тихий дневник" : arcSliders.intensity < 70 ? "сбалансировано" : "американские горки"})
+- Уязвимость: ${arcSliders.vulnerability}/100 (${arcSliders.vulnerability < 30 ? "закрытая" : arcSliders.vulnerability < 70 ? "баланс" : "без кожи"})
+- Тон: ${arcSliders.tone}/100 (${arcSliders.tone < 30 ? "серьёзно" : arcSliders.tone < 70 ? "смешано" : "смеётся сквозь слёзы"})
+- Темп: ${arcSliders.pace}/100 (${arcSliders.pace < 30 ? "медленно" : arcSliders.pace < 70 ? "равномерно" : "сразу в огонь"})`;
   };
 
   const generate = async () => {
@@ -2397,6 +2411,63 @@ ${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.
                 fontFamily:"'DM Sans',sans-serif", fontSize:11.5, color:"#C8D4F0", resize:"none", lineHeight:1.6, minHeight:52}}/>
           </div>
         </div>
+        {/* Архетип арки */}
+        <div style={{...card(),padding:"20px",marginBottom:16}}>
+          <div style={{...u(10,C.muted,700),letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>Архетип арки</div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+            {[
+              {k:"trial",e:"🔥",n:"Испытание",d:"Идёт на страшное и преодолевает"},
+              {k:"depth",e:"🌊",n:"Погружение",d:"Уходит внутрь. Медленно и честно"},
+              {k:"break",e:"💥",n:"Разрыв",d:"Что-то сломалось. Боль и свобода"},
+              {k:"discovery",e:"✨",n:"Открытие",d:"Находит новое в себе и мире"},
+              {k:"masquerade",e:"🎭",n:"Маскарад",d:"Играет роли, ищет себя"},
+            ].map(a=>(
+              <div key={a.k} onClick={()=>setArcArchetype(arcArchetype===a.k?null:a.k)}
+                style={{flex:"1 1 140px",padding:"12px",borderRadius:12,cursor:"pointer",transition:"all .2s",
+                  border:`2px solid ${arcArchetype===a.k?"#A8C0FF":"rgba(168,192,255,0.1)"}`,
+                  background:arcArchetype===a.k?"rgba(168,192,255,0.1)":"rgba(168,192,255,0.03)"}}>
+                <div style={{fontSize:22,marginBottom:6}}>{a.e}</div>
+                <div style={{...u(12,C.ink,600),marginBottom:4}}>{a.n}</div>
+                <div style={{...u(10,C.muted),lineHeight:1.4}}>{a.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Ползунки */}
+        <div style={{...card(),padding:"20px",marginBottom:16}}>
+          <div style={{...u(10,C.muted,700),letterSpacing:2,marginBottom:16,textTransform:"uppercase"}}>Тонкая настройка</div>
+          {[
+            {k:"intensity",l:"Интенсивность",
+              hints:[[0,"тихий дневник"],[25,"негромкая история"],[50,"сбалансировано"],[75,"эмоционально"],[90,"американские горки"]]},
+            {k:"vulnerability",l:"Уязвимость",
+              hints:[[0,"закрытая, держит дистанцию"],[30,"намёки на глубину"],[50,"баланс"],[75,"открытая"],[90,"без кожи"]]},
+            {k:"tone",l:"Тон",
+              hints:[[0,"всё серьёзно"],[30,"немного иронии"],[50,"смешано"],[75,"лёгкость"],[90,"смеётся сквозь слёзы"]]},
+            {k:"pace",l:"Темп",
+              hints:[[0,"медленное нарастание"],[30,"постепенно"],[50,"равномерно"],[75,"быстро"],[90,"сразу в огонь"]]},
+          ].map(({k,l,hints})=>{
+            const val = arcSliders[k];
+            const hint = hints.reduce((a,b)=>val>=b[0]?b:a,hints[0]);
+            return (
+              <div key={k} style={{marginBottom:16}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                  <div style={{...u(11,C.ink2,600)}}>{l}</div>
+                  <div style={{...u(10,C.terra),fontStyle:"italic"}}>"{hint[1]}"</div>
+                </div>
+                <input type="range" min={0} max={100} value={val}
+                  onChange={e=>setArcSliders(p=>({...p,[k]:+e.target.value}))}
+                  style={{width:"100%",accentColor:"#A8C0FF"}}/>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+                  <span style={{...u(9,C.muted)}}>0</span>
+                  <span style={{...u(9,C.muted)}}>{val}</span>
+                  <span style={{...u(9,C.muted)}}>100</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         <div style={{display:"flex", gap:8, alignItems:"center"}}>
           <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:10,color:"#4A5570"}}>Дней:</span>
           {[5,7,10].map(n=>(
