@@ -66,6 +66,11 @@ VISUAL DNA: ${persona?.soul?.visualCode || "authentic lifestyle, real emotions"}
 SHOT TYPE for №${(shotIndex||0)+1} — pick ONE, bias heavily toward first-person and candid:
 
 FIRST-PERSON / POV shots (use for shots 1, 3, 5):
+- Classic selfie: she holds phone at arm's length slightly above, casual angle, natural expression caught mid-moment, not posed — slight camera shake, thumb visible on edge
+- Selfie in car mirror or rearview mirror, window reflection with city outside
+- Bathroom mirror selfie, phone held up, messy hair, real life background visible
+- Selfie with someone else — friend, local stranger, laughing together, candid
+- Selfie attempt gone wrong — slightly blurry, cut off, too close, but real
 - POV looking down at her own hands holding something (coffee, phone, fabric, food)
 - POV feet walking — her shoes on pavement, sand, floor, stairs
 - POV from behind her shoulder — she's looking at something ahead
