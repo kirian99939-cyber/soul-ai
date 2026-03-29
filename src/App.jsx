@@ -1741,10 +1741,11 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
   const [arcPhotos, setArcPhotos] = useState({});
   const [arcSelectedPhoto, setArcSelectedPhoto] = useState({});
   const [genArcPhoto, setGenArcPhoto] = useState({});
+  const [arcPhotoCount, setArcPhotoCount] = useState(3);
 
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
-  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 5) => {
+  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3) => {
     const key = photoKey(arcId, dayIndex);
     setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
@@ -2237,7 +2238,19 @@ ${ptB}
                 )}
 
                 <div style={{padding:"0 18px 10px"}}>
-                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title)}
+                  <div style={{display:"flex",gap:6,marginBottom:6}}>
+                    {[1,3,5].map(n=>(
+                      <button key={n} onClick={()=>setArcPhotoCount(n)}
+                        style={{flex:1,fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
+                          color:arcPhotoCount===n?"#060914":"#7888AA",
+                          background:arcPhotoCount===n?"#A8C0FF":"rgba(168,192,255,0.06)",
+                          border:`1px solid ${arcPhotoCount===n?"#A8C0FF":"rgba(168,192,255,0.1)"}`,
+                          borderRadius:6,padding:"5px",cursor:"pointer",transition:"all .15s"}}>
+                        {n} фото
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount)}
                     disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
                       color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",
