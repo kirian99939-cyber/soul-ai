@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
@@ -36,32 +36,41 @@ export default async function handler(req, res) {
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 400,
-      messages: [{
-        role: "user",
-        content: `Ты — кинематографический фотограф и режиссёр. Напиши детальный промпт для генерации фото через NanoBanana Pro.
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 500,
+        messages: [{
+          role: "user",
+          content: `Ты — кинематографический фотограф. Тебе нужно снять фото №${(shotIndex||0)+1} из ${totalShots||5} для одной истории.
 
 ПЕРСОНАЖ: ${preset}
+СОБЫТИЕ ДНЯ: ${dayTitle || ""}
+НАРРАТИВНЫЙ БИТ: ${narrativeBit || ""}
 ПОСТ: "${postText}"
-ГОРОД/ЛОКАЦИЯ: ${city || "неизвестно"}
+ГОРОД: ${city || "неизвестно"}
 СЕЗОН: ${season}
-ДНК АККАУНТА: ${persona?.soul?.visualCode || "экстремальный lifestyle, живые эмоции, кинематографичность"}
+ВИЗУАЛЬНЫЙ КОД: ${persona?.soul?.visualCode || "экстремальный lifestyle, живые эмоции, кинематографичность"}
 
-Напиши промпт на английском который включает:
-1. Using reference photo, preserve exact face features, hair color and texture of the girl
-2. Точку съёмки (откуда снято — снизу, сверху, из толпы, через стекло и т.д.)
-3. Конкретный момент действия (что именно происходит в эту секунду)
-4. Физические детали (пот, мокрые волосы, эмоция на лице, движение)
-5. Освещение только естественное (без вспышки)
-6. Технические артефакты iPhone (grain, motion blur, капли на объективе если нужно)
-7. Несовершенства которые делают фото живым
-8. Формат 4:5
+ВАЖНО — это фото №${(shotIndex||0)+1} из серии ${totalShots||5}. Все фото из одного дня, одна одежда, одна локация, одна прическа.
 
-Промпт должен быть как режиссёрский сценарий — конкретный, сенсорный, живой.
+Типы ракурсов для серии (выбери тот что подходит для номера ${(shotIndex||0)+1}):
+1 — Главный момент события (красивый портрет/экшн)
+2 — Бэкстейдж/закулисье (готовится, ищет что-то, смотрит в сторону)
+3 — Деталь (руки, одежда, предмет, текстура места)
+4 — Широкий план с локацией (она маленькая в кадре, виден контекст места)
+5 — Живой момент (смеётся, пьёт кофе, разговаривает, отдыхает)
+
+Напиши промпт на английском:
+1. Using reference photo, preserve exact face features, hair color and texture
+2. SAME outfit and location as other shots in the series
+3. Конкретная точка съёмки
+4. Конкретный момент действия
+5. Только естественный свет
+6. iPhone артефакты (grain, motion blur)
+7. Формат 4:5
+
 Только промпт, без пояснений.`
-      }]
-    })
+        }]
+      })
   });
 
   const cinematicData = await cinematicPromptRes.json();

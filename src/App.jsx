@@ -1744,15 +1744,23 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
 
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
-  const generateArcPhoto = async (arcId, dayIndex, postText) => {
+  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 5) => {
     const key = photoKey(arcId, dayIndex);
     setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
-      const starts = await Promise.all(Array.from({length:3}).map(() =>
+      const starts = await Promise.all(Array.from({length: count}).map((_, i) =>
         fetch("/api/start-photo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postText, persona, season: getSeasonVisual() }),
+          body: JSON.stringify({
+            postText,
+            narrativeBit,
+            dayTitle,
+            shotIndex: i,
+            totalShots: count,
+            persona,
+            season: getSeasonVisual()
+          }),
         }).then(r => r.json())
       ));
       const taskIds = starts.map(s => s.taskId).filter(Boolean);
@@ -2229,7 +2237,7 @@ ${ptB}
                 )}
 
                 <div style={{padding:"0 18px 10px"}}>
-                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post)}
+                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title)}
                     disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
                       color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",
