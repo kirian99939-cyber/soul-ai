@@ -40,43 +40,55 @@ export default async function handler(req, res) {
         max_tokens: 500,
         messages: [{
           role: "user",
-          content: `Ты — кинематографический фотограф. Снимаешь фото №${(shotIndex||0)+1} из ${totalShots||3} — фотоотчёт одного дня.
+          content: `Ты — друг который снимает на iPhone, не фотограф. Твоя задача написать промпт который выглядит как настоящее фото из жизни, а не постановочная съёмка.
 
 ПЕРСОНАЖ: ${preset}
-СОБЫТИЕ ДНЯ: ${dayTitle || ""}
+СОБЫТИЕ: ${dayTitle || ""}
 НАРРАТИВНЫЙ БИТ: ${narrativeBit || ""}
 ПОСТ: "${postText}"
 ГОРОД: ${city || "неизвестно"}
 СЕЗОН: ${season}
-ВИЗУАЛЬНЫЙ КОД: ${persona?.soul?.visualCode || "экстремальный lifestyle, живые эмоции"}
+АТМОСФЕРА АККАУНТА: ${persona?.soul?.visualCode || "живые моменты, настоящие эмоции"}
 
-ПРАВИЛО СЕРИИ: все ${totalShots||3} фото — один день, одна одежда, похожая локация.
-Но каждое фото — другой момент дня, другая эмоция, другое действие.
+ЭТО ФОТО №${(shotIndex||0)+1} ИЗ ${totalShots||3} — все фото одного дня, одна одежда, одна прическа.
 
-Момент для фото №${(shotIndex||0)+1} — выбери один из подходящих:
-- Ранний момент (готовится, едет, приходит на место)
-- Главный момент события (кульминация)
-- Бэкстейдж (закулисье, пауза между моментами)
-- Живая пауза (кофе, смеётся, звонит, смотрит вдаль)
-- Финал дня (уходит, смотрит на закат, довольная/усталая)
+Напиши промпт на английском. Обязательно включи:
 
-Напиши промпт на английском:
-1. Using reference photo, preserve exact face features, hair color and texture
-2. SAME outfit throughout the series
-3. Конкретная точка съёмки и момент
-4. Только естественный свет
-5. iPhone grain и артефакты
-6. Формат 4:5
+КАМЕРА (выбери одно):
+- "shot on iPhone 15 Pro, 26mm lens, f/1.8, natural HDR"
+- "shot on iPhone 14, slightly overexposed, candid snapshot"
+- "iPhone photo, accidental zoom, imperfect framing"
 
-ТОНАЛЬНОСТЬ ФОТО — выбери подходящую под контекст:
-- Если это обычный день, прогулка, кофе, разговор → "candid iPhone snapshot, accidental beauty, not posed, caught in motion, imperfect framing, real life"
-- Если это событие/фотосессия/мероприятие → можно "editorial lifestyle, natural light portrait, authentic moment"
-- Если это экшн/спорт/экстрим → "action shot, motion blur, raw energy, caught mid-movement"
+ПЛЕНОЧНАЯ ЭСТЕТИКА (выбери одно):
+- "Kodak Portra 400 film grain, warm tones"
+- "Fujifilm aesthetic, slight color shift"
+- "digital noise, ISO 1600 look"
 
-Никогда: studio lighting, perfect pose, professional photography, glamour, high fashion gloss.
-Всегда: grain, slight overexposure or underexposure, human imperfection, real emotion.
+ЖИВОСТЬ (всегда включай):
+- "candid, not posed, caught in the moment"
+- "natural expression, mid-movement"
+- "imperfect composition, slightly off-center"
+- "RAW unedited look"
 
-Только промпт, без пояснений.`
+АРТЕФАКТЫ (выбери 1-2):
+- "slight motion blur on hands"
+- "lens flare from window light"
+- "shallow depth of field, background slightly out of focus"
+- "slight overexposure on highlights"
+- "faint lens scratch artifact"
+
+МОМЕНТ ДЛЯ ФОТО №${(shotIndex||0)+1} — выбери один из:
+1 → главный момент события, живая эмоция
+2 → бэкстейдж, закулисье, пауза между моментами
+3 → деталь крупным планом (руки, одежда, предмет, текстура)
+4 → широкий план, она в контексте места
+5 → живая пауза (кофе, смеётся, звонит, смотрит вдаль)
+
+ЗАПРЕЩЕНО: studio lighting, perfect pose, professional photography, glamour shot, high fashion, AI-generated look, plastic skin, oversaturated colors.
+
+ОБЯЗАТЕЛЬНО: Using reference photo, preserve exact face features, hair color and texture. Format 4:5.
+
+Только промпт, без пояснений. Пиши конкретно и сенсорно — что именно происходит в эту секунду.`
         }]
       })
   });
