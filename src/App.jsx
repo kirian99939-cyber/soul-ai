@@ -997,7 +997,7 @@ function SoulEditor({persona, onChange}) {
                       extracted = doc.body?.innerText || doc.body?.textContent || text;
                     }
                   }
-                  onChange("soul",{...soul, tovSamples: extracted.slice(0, 15000)});
+                  onChange("soul",{...soul, tovSamples: extracted.slice(0, 25000)});
                 } catch(e){ console.error(e); }
                 setTovLoading(false);
                 e.target.value = "";
