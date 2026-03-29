@@ -62,22 +62,6 @@ const getZodiac = (dateStr) => {
   return { sun };
 };
 
-function getSeason() {
-  const m = new Date().getMonth();
-  if(m >= 2 && m <= 4) return "весна";
-  if(m >= 5 && m <= 7) return "лето";
-  if(m >= 8 && m <= 10) return "осень";
-  return "зима";
-}
-
-function getSeasonVisual() {
-  const m = new Date().getMonth();
-  if(m >= 2 && m <= 4) return "spring, bare trees or first leaves, possible snow remains, cool light, March-May Russia";
-  if(m >= 5 && m <= 7) return "summer, green trees, warm golden light, long days";
-  if(m >= 8 && m <= 10) return "autumn, yellow and orange leaves, soft light, September-November";
-  return "winter, snow, bare trees, cold blue light, December-February Russia";
-}
-
 // ── AVATAR SVG ──────────────────────────────────────────
 function Avatar({ ap={}, size=56, ring=null }) {
   const hair  = ap.hair  || "#888";
@@ -1677,6 +1661,22 @@ function MindTab({persona, onChange}) {
 }
 
 // ── STUDIO TAB ───────────────────────────────────────────
+function getSeason() {
+  const m = new Date().getMonth();
+  if(m >= 2 && m <= 4) return "весна";
+  if(m >= 5 && m <= 7) return "лето";
+  if(m >= 8 && m <= 10) return "осень";
+  return "зима";
+}
+
+function getSeasonVisual() {
+  const m = new Date().getMonth();
+  if(m >= 2 && m <= 4) return "spring, bare trees or first leaves, possible snow remains, cool light, March-May Russia";
+  if(m >= 5 && m <= 7) return "summer, green trees, warm golden light, long days";
+  if(m >= 8 && m <= 10) return "autumn, yellow and orange leaves, soft light, September-November";
+  return "winter, snow, bare trees, cold blue light, December-February Russia";
+}
+
 function StudioTab({persona, onSave, onSavePhoto}) {
   const [niches,   setNiches]   = useState(persona.niches  || ["fashion","travel","self"]);
   const [formats,  setFormats]  = useState(persona.formats || ["story","hot","reply","vuln"]);
