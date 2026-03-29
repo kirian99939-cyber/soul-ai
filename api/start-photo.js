@@ -40,50 +40,52 @@ export default async function handler(req, res) {
         max_tokens: 500,
         messages: [{
           role: "user",
-          content: `You are a friend shooting casual iPhone photos during a day in Japan. Write a photorealistic prompt for NanoBanana Pro.
+          content: `You are analyzing a social media post to write a photorealistic image prompt.
+
+STEP 1 — EXTRACT FROM CONTEXT:
+Read carefully and extract:
+- WHERE is she? (city/country from the narrative, not from profile)
+- WHAT is she wearing? (exact outfit described in narrative/post)
+- WHAT is happening? (the specific event/activity)
+
+NARRATIVE BIT: "${narrativeBit || ""}"
+POST TEXT: "${postText}"
+PROFILE CITY: ${city || "unknown"}
+
+STEP 2 — WRITE PHOTO PROMPT for shot №${(shotIndex||0)+1} of ${totalShots||3}:
+
+Rules:
+- Location MUST match the narrative (if she's in India → India, if Japan → Japan, if Istanbul → Istanbul)
+- Outfit MUST match what's described in narrative (if sari → sari, if kimono → kimono)
+- All ${totalShots||3} shots: same location, same outfit, same hair, different moments of the day
 
 CHARACTER: ${preset}
-TODAY'S EVENT: ${dayTitle || ""}
-NARRATIVE: ${narrativeBit || ""}
-POST CONTEXT: "${postText}"
-LOCATION: ${city || "Japan"}
 SEASON: ${season}
+VISUAL DNA: ${persona?.soul?.visualCode || "authentic lifestyle, real emotions"}
 
-OUTFIT LOCK — use EXACTLY this description in every prompt:
-"${narrativeBit?.toLowerCase().includes("кимоно") || postText?.toLowerCase().includes("кимоно") || postText?.toLowerCase().includes("kimono") ? "wearing traditional Japanese kimono, specific pattern and colors consistent throughout" : "wearing her outfit from the day, same clothes in all shots"}"
+SHOT TYPE for №${(shotIndex||0)+1}:
+1 → Main action/emotion moment
+2 → Candid detail (hands, texture, object)
+3 → Wide shot with location context
+4 → Backstage/pause moment
+5 → Spontaneous reaction/surprise
 
-SHOT №${(shotIndex||0)+1} of ${totalShots||3} — all shots same day, SAME outfit, SAME hair.
+CAMERA: randomly pick one:
+- "shot on iPhone 15 Pro, 24mm, candid, slightly tilted"
+- "iPhone 14 snapshot, imperfect framing, one-handed"
+- "phone camera, caught mid-movement, natural"
 
-JAPAN AUTHENTICITY — include real Japan details like:
-- Specific locations: narrow alley in Gion, konbini, torii gate, tatami room, ramen shop, Shinkansen platform, temple garden
-- Real details: vending machines, noren curtains, paper lanterns, matcha, onigiri, street food stalls
-- Japanese people around her as background
-- Signs in Japanese visible
+FILM: randomly pick one:
+- "Kodak Portra 400, warm grain"
+- "Fujifilm aesthetic, punchy shadows"
+- "ISO 1600 digital noise, raw snapshot"
 
-SHOT TYPE for №${(shotIndex||0)+1} — pick ONE:
-1 → Action/movement: walking through torii gates, trying street food, laughing with locals
-2 → Candid detail: hands holding matcha bowl, feet in wooden sandals, reflection in shop window
-3 → Wide establishing: tiny figure in huge temple complex or busy Shibuya-style crossing
-4 → Intimate backstage: fixing kimono in mirror, exhausted on train, eating alone at counter
-5 → Surprise/reaction: tasting something unexpected, getting lost, discovering hidden alley
+ALWAYS: natural light, not posed, real skin texture, imperfect composition, RAW look
+NEVER: studio lighting, perfect pose, AI-smooth skin, glamour
 
-CAMERA STYLE — pick ONE randomly:
-- "shot on iPhone 15 Pro, 24mm, slightly tilted, candid"
-- "iPhone 14 snapshot, accidental zoom, imperfect framing"
-- "phone camera, one-handed shot, motion blur on edges"
+Using reference photo — preserve exact face features, copper red curly hair, blue eyes, freckles. Format 4:5.
 
-FILM LOOK — pick ONE:
-- "Kodak Portra 400, warm grain, slight color bleed"
-- "Fujifilm X100 aesthetic, punchy colors, real shadows"
-- "digital noise, ISO 1600, authentic snapshot"
-
-ALWAYS INCLUDE: natural light only, not posed, caught mid-moment, real skin texture, imperfect composition, RAW unedited look
-
-NEVER: studio lighting, perfect pose, glamour, AI-smooth skin, oversaturated
-
-Using reference photo — preserve exact face, copper red curly hair, blue eyes, freckles. Format 4:5.
-
-Write only the prompt in English, no explanations. Be specific and sensory — what is happening THIS second.`
+Write ONLY the final prompt in English. No analysis, no explanations.`
         }]
       })
   });
