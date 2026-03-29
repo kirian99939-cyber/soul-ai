@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
@@ -168,6 +168,10 @@ ALWAYS: natural light, not posed, real skin texture, imperfect composition, RAW 
 NEVER: studio lighting, perfect pose, AI-smooth skin, glamour
 
 Using reference photo — preserve exact face features, copper red curly hair, blue eyes, freckles. Format 4:5.
+
+OUTFIT LOCK — use EXACTLY this in every shot, do not deviate:
+"${outfitDescription || "same consistent outfit throughout all shots"}"
+This outfit must be identical across all photos in this series.
 
 Write ONLY the final prompt in English. No analysis, no explanations.`
         }]

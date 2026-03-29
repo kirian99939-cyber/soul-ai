@@ -2161,6 +2161,41 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
     const key = photoKey(arcId, dayIndex);
     setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
+      // Сначала генерируем описание образа дня — одно для всех фото
+      let outfitDescription = "";
+      try {
+        const outfitRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY||"",
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 150,
+            messages: [{
+              role: "user",
+              content: `Опиши одежду и образ для фотосессии одного дня. Одно предложение на английском — максимально конкретно: цвет, фактура, детали одежды, прическа, аксессуары.
+
+КОНТЕКСТ ДНЯ: ${dayTitle || ""}
+НАРРАТИВ: ${narrativeBit || ""}
+ПОСТ: "${postText}"
+СЕЗОН: ${getSeasonVisual()}
+АРХЕТИП: ${arcArchetype || "обычный день"}
+
+Только описание образа, без лишних слов. Например: "wearing oversized cream linen shirt tucked into high-waist dark jeans, copper curly hair loose and slightly messy, small gold hoop earrings, white sneakers"`
+            }]
+          })
+        });
+        const outfitData = await outfitRes.json();
+        outfitDescription = outfitData.content?.[0]?.text?.trim() || "";
+        console.log("Outfit lock:", outfitDescription);
+      } catch(e) {
+        console.log("Outfit generation failed:", e.message);
+      }
+
       const starts = await Promise.all(Array.from({length: count}).map((_, i) =>
         fetch("/api/start-photo", {
           method: "POST",
@@ -2174,7 +2209,8 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             persona,
             season: getSeasonVisual(),
             personaCity,
-            arcArchetype
+            arcArchetype,
+            outfitDescription
           }),
         }).then(r => r.json())
       ));
