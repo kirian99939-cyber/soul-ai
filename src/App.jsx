@@ -45,6 +45,22 @@ const INV = new Set(["anxiety","loneliness","homesickness","moneyAnxiety","spend
 const uid = () => Math.random().toString(36).slice(2,10);
 const now = () => new Date().toISOString();
 const fmtDate = d => new Date(d).toLocaleDateString("ru",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+const getZodiac = (dateStr) => {
+  if(!dateStr) return null;
+  const d = new Date(dateStr);
+  const month = d.getMonth()+1;
+  const day = d.getDate();
+  const signs = [
+    [1,20,"Козерог"],[2,19,"Водолей"],[3,20,"Рыбы"],[4,20,"Овен"],
+    [5,21,"Телец"],[6,21,"Близнецы"],[7,22,"Рак"],[8,23,"Лев"],
+    [9,23,"Дева"],[10,23,"Весы"],[11,22,"Скорпион"],[12,22,"Стрелец"],[12,31,"Козерог"]
+  ];
+  let sun = "Козерог";
+  for(const [m,d2,sign] of signs) {
+    if(month < m || (month===m && day<=d2)) { sun=sign; break; }
+  }
+  return { sun };
+};
 
 // ── AVATAR SVG ──────────────────────────────────────────
 function Avatar({ ap={}, size=56, ring=null }) {
@@ -234,6 +250,7 @@ ${s.audience ? `АУДИТОРИЯ: ${s.audience}` : ""}
 ${s.contentStrategy ? `СТРАТЕГИЯ: ${s.contentStrategy}` : ""}
 ${s.contentCode ? `КОД КОНТЕНТА: ${s.contentCode}` : ""}
 ${s.tov ? `\nТОН И ГОЛОС АВТОРА:\n${s.tov}` : ""}
+${s.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${s.astroProfile}` : ""}
 ${s.job ? `\nРАБОТА: ${s.job}` : ""}
 ${s.hobbies?.length ? `\nУВЛЕЧЕНИЯ: ${s.hobbies.join(", ")}` : ""}
 ${s.lifeGoal ? `\nЦЕЛЬ ЖИЗНИ: ${s.lifeGoal}` : ""}
@@ -762,6 +779,7 @@ function RadialMindMap({ soul }) {
 function SoulEditor({persona, onChange}) {
   const [open, setOpen] = useState(null);
   const [tovLoading, setTovLoading] = useState(false);
+  const [astroLoading, setAstroLoading] = useState(false);
   const soul = persona.soul || {};
   const upd = useCallback((path, val) => {
     const s = JSON.parse(JSON.stringify(soul));
@@ -885,6 +903,141 @@ function SoulEditor({persona, onChange}) {
           <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:2,color:"#FFD580",textTransform:"uppercase",marginBottom:5,opacity:0.8}}>Архетипы</div>
           <Ed value={soul.archetypes||""} onChange={v=>onChange("soul",{...soul,archetypes:v})} style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0"}} multi/>
         </div>
+      </div>
+
+      {/* ── АСТРОЛОГИЯ ── */}
+      <div style={{...card(), padding:"24px", marginBottom:16}}>
+        <div style={{...disp(13,C.clay,700), marginBottom:16, letterSpacing:"0.08em"}}>✦ АСТРОЛОГИЯ</div>
+
+        {/* Дата рождения */}
+        <div style={{marginBottom:16}}>
+          <div style={{...u(11,C.ink2,600), marginBottom:6}}>Дата рождения</div>
+          <input type="date"
+            value={soul.birthDate||""}
+            onChange={e=>{
+              const date = e.target.value;
+              const zodiac = getZodiac(date);
+              onChange("soul",{...soul, birthDate:date, zodiac});
+            }}
+            style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(168,192,255,0.1)",
+              borderRadius:8,padding:"8px 12px",color:C.ink,fontFamily:F.b,fontSize:13,
+              width:"100%",boxSizing:"border-box"}}
+          />
+        </div>
+
+        {/* Знак зодиака + планеты */}
+        {soul.zodiac && (
+          <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+            <div style={{background:"rgba(196,168,255,0.08)",border:"1px solid rgba(196,168,255,0.2)",
+              borderRadius:10,padding:"8px 14px"}}>
+              <div style={{...u(9,C.muted),marginBottom:2}}>СОЛНЦЕ</div>
+              <div style={{...u(13,C.clay,600)}}>{soul.zodiac.sun}</div>
+            </div>
+            {soul.zodiac.moon && <div style={{background:"rgba(168,192,255,0.08)",border:"1px solid rgba(168,192,255,0.2)",
+              borderRadius:10,padding:"8px 14px"}}>
+              <div style={{...u(9,C.muted),marginBottom:2}}>ЛУНА</div>
+              <div style={{...u(13,C.terra,600)}}>{soul.zodiac.moon}</div>
+            </div>}
+            {soul.zodiac.rising && <div style={{background:"rgba(128,255,204,0.08)",border:"1px solid rgba(128,255,204,0.2)",
+              borderRadius:10,padding:"8px 14px"}}>
+              <div style={{...u(9,C.muted),marginBottom:2}}>АСЦЕНДЕНТ</div>
+              <div style={{...u(13,C.sage,600)}}>{soul.zodiac.rising}</div>
+            </div>}
+          </div>
+        )}
+
+        {/* Луна и асцендент вручную */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+          {[
+            {k:"moon",l:"Знак Луны",p:"Рак, Скорпион..."},
+            {k:"rising",l:"Асцендент",p:"Лев, Рыбы..."},
+            {k:"venus",l:"Венера",p:"Весы, Телец..."},
+            {k:"mars",l:"Марс",p:"Овен, Скорпион..."},
+          ].map(({k,l,p})=>(
+            <div key={k}>
+              <div style={{...u(10,C.muted),marginBottom:4}}>{l}</div>
+              <input value={soul.zodiac?.[k]||""}
+                onChange={e=>onChange("soul",{...soul,zodiac:{...soul.zodiac,[k]:e.target.value}})}
+                placeholder={p}
+                style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(168,192,255,0.08)",
+                  borderRadius:8,padding:"7px 10px",color:C.ink,fontFamily:F.b,fontSize:12,boxSizing:"border-box"}}/>
+            </div>
+          ))}
+        </div>
+
+        {/* Натальная карта — описание */}
+        <div style={{marginBottom:12}}>
+          <div style={{...u(11,C.ink2,600),marginBottom:6}}>Описание натальной карты</div>
+          <div style={{...u(10,C.muted),marginBottom:6}}>Вставь текст из astro.com или опиши ключевые темы карты</div>
+          <textarea value={soul.natalChart||""}
+            onChange={e=>onChange("soul",{...soul,natalChart:e.target.value})}
+            placeholder="Солнце в Стрельце — неугасимая жажда приключений и смысла. Луна в Раке — глубокая чувствительность скрытая за экстравертной маской..."
+            style={{width:"100%",minHeight:120,background:"rgba(255,255,255,0.03)",
+              border:"1px solid rgba(168,192,255,0.1)",borderRadius:10,padding:12,
+              color:C.ink,fontFamily:F.b,fontSize:12,lineHeight:1.6,resize:"vertical",
+              boxSizing:"border-box"}}/>
+        </div>
+
+        {/* Кнопка — сгенерировать астро-профиль */}
+        <button onClick={async()=>{
+          if(!soul.birthDate) return;
+          setAstroLoading(true);
+          try {
+            const r = await fetch("https://api.anthropic.com/v1/messages",{
+              method:"POST",
+              headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+              body:JSON.stringify({
+                model:"claude-sonnet-4-20250514",
+                max_tokens:800,
+                messages:[{role:"user",content:`Ты астролог-психолог. Создай краткий астрологический профиль персонажа для использования в контент-стратегии.
+
+ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
+ДАТА РОЖДЕНИЯ: ${soul.birthDate}
+СОЛНЦЕ: ${soul.zodiac?.sun||""}
+ЛУНА: ${soul.zodiac?.moon||""}
+АСЦЕНДЕНТ: ${soul.zodiac?.rising||""}
+ВЕНЕРА: ${soul.zodiac?.venus||""}
+МАРС: ${soul.zodiac?.mars||""}
+${soul.natalChart ? `НАТАЛЬНАЯ КАРТА: ${soul.natalChart}` : ""}
+
+Создай профиль:
+
+**КЛЮЧЕВЫЕ ТЕМЫ ЖИЗНИ:**
+(3-4 главные темы которые проходят через всю жизнь)
+
+**КАК ПРОЯВЛЯЕТСЯ В КОНТЕНТЕ:**
+(как астрология влияет на то о чём она пишет и как)
+
+**ТЕНЕВЫЕ СТОРОНЫ:**
+(что мешает, внутренние конфликты из карты)
+
+**АСТРО-ФРАЗЫ ДНК:**
+(5 фраз которые могла бы говорить именно этот астротип)
+
+Пиши конкретно, психологично, без банальщины.`}]
+              })
+            });
+            const d = await r.json();
+            const astroProfile = d.content?.[0]?.text?.trim()||"";
+            onChange("soul",{...soul, astroProfile, birthDate:soul.birthDate, zodiac:soul.zodiac, natalChart:soul.natalChart});
+          } catch(e){console.error(e);}
+          setAstroLoading(false);
+        }}
+        style={{width:"100%",padding:"10px",background:"rgba(196,168,255,0.08)",
+          border:"1px solid rgba(196,168,255,0.2)",borderRadius:8,
+          color:astroLoading?"#4A5570":C.clay,fontFamily:F.b,fontSize:11,fontWeight:600,
+          cursor:astroLoading?"wait":"pointer",marginBottom:soul.astroProfile?16:0}}>
+          {astroLoading?"⟳ Генерирую астро-профиль...":"✦ Сгенерировать астро-профиль"}
+        </button>
+
+        {soul.astroProfile && (
+          <textarea value={soul.astroProfile}
+            onChange={e=>onChange("soul",{...soul,astroProfile:e.target.value})}
+            style={{width:"100%",minHeight:200,background:"rgba(255,255,255,0.03)",
+              border:"1px solid rgba(196,168,255,0.15)",borderRadius:10,padding:12,
+              color:C.ink2,fontFamily:F.b,fontSize:11,lineHeight:1.7,resize:"vertical",
+              boxSizing:"border-box"}}/>
+        )}
       </div>
 
       {/* ── EXPANDABLE SECTIONS ── */}
@@ -1978,6 +2131,7 @@ ${soul.audience ? `АУДИТОРИЯ: ${soul.audience}` : ""}
 ${soul.contentStrategy ? `СТРАТЕГИЯ: ${soul.contentStrategy}` : ""}
 ${soul.contentCode ? `КОД КОНТЕНТА: ${soul.contentCode}` : ""}
 ${soul.tov ? `\nТОН И ГОЛОС АВТОРА:\n${soul.tov}` : ""}
+${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.astroProfile}` : ""}
 ${soul.job ? `\nРАБОТА: ${soul.job}` : ""}
 ${soul.hobbies?.length ? `\nУВЛЕЧЕНИЯ: ${soul.hobbies.join(", ")}` : ""}
 ${soul.lifeGoal ? `\nЦЕЛЬ ЖИЗНИ: ${soul.lifeGoal}` : ""}
@@ -2017,7 +2171,8 @@ ${ptB}
   "tag": "одно_слово_тег",
   "arcPhase": "спуск | плато | поворот | подъём | прорыв"
 }]
-${soul.tov ? `\nТОН И ГОЛОС АВТОРА (строго соблюдай):\n${soul.tov}` : ""}`;
+${soul.tov ? `\nТОН И ГОЛОС АВТОРА (строго соблюдай):\n${soul.tov}` : ""}
+${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.astroProfile}` : ""}`;
   };
 
   const generate = async () => {
@@ -2597,7 +2752,8 @@ function RemixTab({ persona, onSavePhoto }) {
 - НЕ копируй оригинал дословно — это твоя история, просто похожая волна
 
 Верни ТОЛЬКО текст поста, без кавычек и пояснений.
-${soul.tov ? `\nТОН И ГОЛОС АВТОРА (строго соблюдай):\n${soul.tov}` : ""}`;
+${soul.tov ? `\nТОН И ГОЛОС АВТОРА (строго соблюдай):\n${soul.tov}` : ""}
+${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.astroProfile}` : ""}`;
   };
 
   const remixPost = async (post) => {
