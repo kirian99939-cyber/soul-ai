@@ -68,6 +68,14 @@ export default async function handler(req, res) {
 5. iPhone grain и артефакты
 6. Формат 4:5
 
+ТОНАЛЬНОСТЬ ФОТО — выбери подходящую под контекст:
+- Если это обычный день, прогулка, кофе, разговор → "candid iPhone snapshot, accidental beauty, not posed, caught in motion, imperfect framing, real life"
+- Если это событие/фотосессия/мероприятие → можно "editorial lifestyle, natural light portrait, authentic moment"
+- Если это экшн/спорт/экстрим → "action shot, motion blur, raw energy, caught mid-movement"
+
+Никогда: studio lighting, perfect pose, professional photography, glamour, high fashion gloss.
+Всегда: grain, slight overexposure or underexposure, human imperfection, real emotion.
+
 Только промпт, без пояснений.`
         }]
       })
