@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
@@ -79,6 +79,70 @@ FILM: randomly pick one:
 - "Kodak Portra 400, warm grain"
 - "Fujifilm aesthetic, punchy shadows"
 - "ISO 1600 digital noise, raw snapshot"
+
+${arcArchetype ? `
+ARC ARCHETYPE VISUAL RULES — this is the most important styling directive:
+
+${arcArchetype === "trial" ? `
+🔥 ИСПЫТАНИЕ — Visual language of struggle and triumph:
+- Camera: handheld, slightly shaky, like someone is running to catch the moment
+- Light: harsh, directional, no softness — sunlight cutting through, dramatic shadows
+- Movement: always mid-action, hair flying, clothes in motion, sweat visible
+- Expression: jaw set, eyes fierce or tearful with determination, never relaxed
+- Color: high contrast, slightly desaturated except for one hot color (red, orange)
+- Imperfections: motion blur on edges, dust particles, lens flare from direct sun
+- Composition: diagonal lines, subject slightly off-center, tension in the frame` : ""}
+
+${arcArchetype === "depth" ? `
+🌊 ПОГРУЖЕНИЕ — Visual language of introspection:
+- Camera: still, deliberate, as if time has stopped
+- Light: soft diffused window light, no harsh shadows, misty or overcast outdoor
+- Movement: none — she is completely still, or one slow gesture (hand to face, eyes closing)
+- Expression: eyes downcast or gazing far away, slight frown, processing something
+- Color: muted, desaturated, cool blues and grays, like a rainy day filter
+- Imperfections: slight focus softness, minimal grain, quiet frame
+- Composition: lots of negative space around her, she is small in the frame` : ""}
+
+${arcArchetype === "break" ? `
+💥 РАЗРЫВ — Visual language of rupture and release:
+- Camera: wide angle slightly distorted, or extreme close-up — no middle ground
+- Light: harsh overhead or backlight creating silhouette, or very low moody light
+- Movement: collapse, turning away, head in hands, or frozen mid-breakdown
+- Expression: raw emotion — tears, open mouth, eyes red, completely unguarded
+- Color: desaturated almost black and white, or very cold blue tones
+- Imperfections: heavy grain, underexposed, shadows eating the frame
+- Composition: broken, asymmetric, something feels wrong about the framing intentionally` : ""}
+
+${arcArchetype === "discovery" ? `
+✨ ОТКРЫТИЕ — Visual language of wonder and awakening:
+- Camera: wide, exploratory, like seeing everything for the first time
+- Light: golden hour, magic hour, light coming from unexpected angles, lens flare welcome
+- Movement: turning toward something, hand reaching out, face lifting up
+- Expression: wide eyes, half-smile of surprise, genuine delight, mouth slightly open
+- Color: warm golden tones, rich and saturated but natural, glowing
+- Imperfections: beautiful lens flare, slight overexposure on highlights, dreamy edges
+- Composition: she is discovering something in the frame — her gaze leads the eye` : ""}
+
+${arcArchetype === "masquerade" ? `
+🎭 МАСКАРАД — Visual language of play and identity:
+- Camera: unusual angles — from below, from above, through objects, reflections
+- Light: mixed artificial and natural, neon, interesting color casts, theatrical
+- Movement: performative, aware of the camera but playing with it
+- Expression: knowing smirk, one eyebrow raised, caught between masks
+- Color: unexpected color combinations, pops of saturated color
+- Imperfections: reflection in glass, double exposure feel, something slightly surreal
+- Composition: mirrors, windows, shadows that create a second version of her` : ""}
+
+${arcArchetype === "chaos" ? `
+🌀 ОТРЫВ — Visual language of pure unhinged energy:
+- Camera: shaking, tilted 15-20 degrees, like thrown into the moment
+- Light: night, neon, strobe-like flash, unpredictable mixed sources
+- Movement: maximum — spinning, running, jumping, blurred limbs everywhere
+- Expression: mouth open laughing or screaming, eyes wild, completely gone
+- Color: oversaturated, blown highlights, colors bleeding into each other
+- Imperfections: heavy motion blur, ISO noise cranked up, accidental double exposure
+- Composition: rules completely broken — subject half out of frame, horizon tilted, chaos` : ""}
+` : ""}
 
 ALWAYS: natural light, not posed, real skin texture, imperfect composition, RAW look
 NEVER: studio lighting, perfect pose, AI-smooth skin, glamour

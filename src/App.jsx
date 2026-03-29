@@ -2157,7 +2157,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
 
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
-  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3) => {
+  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3, personaCity = "", arcArchetype = null) => {
     const key = photoKey(arcId, dayIndex);
     setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
@@ -2172,7 +2172,9 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             shotIndex: i,
             totalShots: count,
             persona,
-            season: getSeasonVisual()
+            season: getSeasonVisual(),
+            personaCity,
+            arcArchetype
           }),
         }).then(r => r.json())
       ));
@@ -2731,7 +2733,7 @@ ${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — и
                       </button>
                     ))}
                   </div>
-                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount)}
+                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype)}
                     disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
                       color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",
