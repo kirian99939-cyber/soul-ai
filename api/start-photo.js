@@ -40,55 +40,50 @@ export default async function handler(req, res) {
         max_tokens: 500,
         messages: [{
           role: "user",
-          content: `Ты — друг который снимает на iPhone, не фотограф. Твоя задача написать промпт который выглядит как настоящее фото из жизни, а не постановочная съёмка.
+          content: `You are a friend shooting casual iPhone photos during a day in Japan. Write a photorealistic prompt for NanoBanana Pro.
 
-ПЕРСОНАЖ: ${preset}
-СОБЫТИЕ: ${dayTitle || ""}
-НАРРАТИВНЫЙ БИТ: ${narrativeBit || ""}
-ПОСТ: "${postText}"
-ГОРОД: ${city || "неизвестно"}
-СЕЗОН: ${season}
-АТМОСФЕРА АККАУНТА: ${persona?.soul?.visualCode || "живые моменты, настоящие эмоции"}
+CHARACTER: ${preset}
+TODAY'S EVENT: ${dayTitle || ""}
+NARRATIVE: ${narrativeBit || ""}
+POST CONTEXT: "${postText}"
+LOCATION: ${city || "Japan"}
+SEASON: ${season}
 
-ЭТО ФОТО №${(shotIndex||0)+1} ИЗ ${totalShots||3} — все фото одного дня, одна одежда, одна прическа.
+OUTFIT LOCK — use EXACTLY this description in every prompt:
+"${narrativeBit?.toLowerCase().includes("кимоно") || postText?.toLowerCase().includes("кимоно") || postText?.toLowerCase().includes("kimono") ? "wearing traditional Japanese kimono, specific pattern and colors consistent throughout" : "wearing her outfit from the day, same clothes in all shots"}"
 
-Напиши промпт на английском. Обязательно включи:
+SHOT №${(shotIndex||0)+1} of ${totalShots||3} — all shots same day, SAME outfit, SAME hair.
 
-КАМЕРА (выбери одно):
-- "shot on iPhone 15 Pro, 26mm lens, f/1.8, natural HDR"
-- "shot on iPhone 14, slightly overexposed, candid snapshot"
-- "iPhone photo, accidental zoom, imperfect framing"
+JAPAN AUTHENTICITY — include real Japan details like:
+- Specific locations: narrow alley in Gion, konbini, torii gate, tatami room, ramen shop, Shinkansen platform, temple garden
+- Real details: vending machines, noren curtains, paper lanterns, matcha, onigiri, street food stalls
+- Japanese people around her as background
+- Signs in Japanese visible
 
-ПЛЕНОЧНАЯ ЭСТЕТИКА (выбери одно):
-- "Kodak Portra 400 film grain, warm tones"
-- "Fujifilm aesthetic, slight color shift"
-- "digital noise, ISO 1600 look"
+SHOT TYPE for №${(shotIndex||0)+1} — pick ONE:
+1 → Action/movement: walking through torii gates, trying street food, laughing with locals
+2 → Candid detail: hands holding matcha bowl, feet in wooden sandals, reflection in shop window
+3 → Wide establishing: tiny figure in huge temple complex or busy Shibuya-style crossing
+4 → Intimate backstage: fixing kimono in mirror, exhausted on train, eating alone at counter
+5 → Surprise/reaction: tasting something unexpected, getting lost, discovering hidden alley
 
-ЖИВОСТЬ (всегда включай):
-- "candid, not posed, caught in the moment"
-- "natural expression, mid-movement"
-- "imperfect composition, slightly off-center"
-- "RAW unedited look"
+CAMERA STYLE — pick ONE randomly:
+- "shot on iPhone 15 Pro, 24mm, slightly tilted, candid"
+- "iPhone 14 snapshot, accidental zoom, imperfect framing"
+- "phone camera, one-handed shot, motion blur on edges"
 
-АРТЕФАКТЫ (выбери 1-2):
-- "slight motion blur on hands"
-- "lens flare from window light"
-- "shallow depth of field, background slightly out of focus"
-- "slight overexposure on highlights"
-- "faint lens scratch artifact"
+FILM LOOK — pick ONE:
+- "Kodak Portra 400, warm grain, slight color bleed"
+- "Fujifilm X100 aesthetic, punchy colors, real shadows"
+- "digital noise, ISO 1600, authentic snapshot"
 
-МОМЕНТ ДЛЯ ФОТО №${(shotIndex||0)+1} — выбери один из:
-1 → главный момент события, живая эмоция
-2 → бэкстейдж, закулисье, пауза между моментами
-3 → деталь крупным планом (руки, одежда, предмет, текстура)
-4 → широкий план, она в контексте места
-5 → живая пауза (кофе, смеётся, звонит, смотрит вдаль)
+ALWAYS INCLUDE: natural light only, not posed, caught mid-moment, real skin texture, imperfect composition, RAW unedited look
 
-ЗАПРЕЩЕНО: studio lighting, perfect pose, professional photography, glamour shot, high fashion, AI-generated look, plastic skin, oversaturated colors.
+NEVER: studio lighting, perfect pose, glamour, AI-smooth skin, oversaturated
 
-ОБЯЗАТЕЛЬНО: Using reference photo, preserve exact face features, hair color and texture. Format 4:5.
+Using reference photo — preserve exact face, copper red curly hair, blue eyes, freckles. Format 4:5.
 
-Только промпт, без пояснений. Пиши конкретно и сенсорно — что именно происходит в эту секунду.`
+Write only the prompt in English, no explanations. Be specific and sensory — what is happening THIS second.`
         }]
       })
   });
