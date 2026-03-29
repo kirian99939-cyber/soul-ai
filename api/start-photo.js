@@ -63,12 +63,27 @@ CHARACTER: ${preset}
 SEASON: ${season}
 VISUAL DNA: ${persona?.soul?.visualCode || "authentic lifestyle, real emotions"}
 
-SHOT TYPE for №${(shotIndex||0)+1}:
-1 → Main action/emotion moment
-2 → Candid detail (hands, texture, object)
-3 → Wide shot with location context
-4 → Backstage/pause moment
-5 → Spontaneous reaction/surprise
+SHOT TYPE for №${(shotIndex||0)+1} — pick ONE, bias heavily toward first-person and candid:
+
+FIRST-PERSON / POV shots (use for shots 1, 3, 5):
+- POV looking down at her own hands holding something (coffee, phone, fabric, food)
+- POV feet walking — her shoes on pavement, sand, floor, stairs
+- POV from behind her shoulder — she's looking at something ahead
+- Mirror selfie — she holds phone, sees herself, imperfect angle
+- Shadow selfie — her shadow on ground/wall, she looks down at it
+- Hand reaching into frame toward something
+- She films herself walking, camera at arm's length, slightly shaky
+
+THIRD-PERSON candid (use for shots 2, 4):
+- Friend caught her mid-laugh from across the table
+- Zoomed in from distance, she doesn't know she's being photographed
+- Through a window or doorway, slice of life
+
+DETAIL shots (use for shot 3):
+- Extreme close-up: her hands, jewelry, texture of fabric, food she's eating
+- Object she's holding or touching, her fingers in frame
+
+NEVER: posed portrait facing camera directly, professional headshot angle, model pose
 
 CAMERA: randomly pick one:
 - "shot on iPhone 15 Pro, 24mm, candid, slightly tilted"
