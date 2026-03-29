@@ -3207,21 +3207,30 @@ function CreateModal({onClose, onCreate}) {
   const [step, setStep]   = useState(1);
   const [form, setForm]   = useState({
     name:"",handle:"",brand:"The Legend",city:"",age:"",bio:"",
+    birthDate:"",birthPlace:"",
     appearance:{hair:"#C45518",eyes:"#7AAAD4",freckles:true,skin:"#F5D0B0",hairType:"curly"},
-    template:"lera",
+    template:"ai",
     niches:["fashion","travel","self"],
     formats:["story","hot","reply","vuln"],
     context:"",
   });
+  const [genSoul, setGenSoul] = useState(false);
+  const [generatedSoul, setGeneratedSoul] = useState(null);
   const set = (k,v) => setForm(p=>({...p,[k]:v}));
   const setAp = (k,v) => setForm(p=>({...p,appearance:{...p.appearance,[k]:v}}));
 
   const submit = () => {
-    const soul = form.template==="lera" ? LERA_SOUL : EMPTY_SOUL();
+    const soul = form.template==="ai" && generatedSoul ? generatedSoul :
+                 form.template==="lera" ? LERA_SOUL : EMPTY_SOUL();
+    const zodiac = form.birthDate ? getZodiac(form.birthDate) : null;
     const persona = {
-      id: uid(), name:form.name, handle:form.handle||form.name.toLowerCase().replace(/\s+/g,"_").replace(/[^a-z_]/g,""),
+      id: uid(), name:form.name,
+      handle:form.handle||form.name.toLowerCase().replace(/\s+/g,"_").replace(/[^a-z_]/g,""),
       brand:form.brand, city:form.city, age:form.age, bio:form.bio,
-      appearance:form.appearance, soul, state:{...ST_DEF},
+      birthDate:form.birthDate, birthPlace:form.birthPlace,
+      appearance:form.appearance,
+      soul:{...soul, birthDate:form.birthDate, birthPlace:form.birthPlace, zodiac},
+      state:{...ST_DEF},
       niches:form.niches, formats:form.formats, context:form.context,
       createdAt:now(),
     };
@@ -3290,21 +3299,130 @@ function CreateModal({onClose, onCreate}) {
           )}
           {step===3 && (
             <div>
-              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3,color:"#4A5570",textTransform:"uppercase",marginBottom:16}}>Шаблон души</div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,fontWeight:700,letterSpacing:3,color:"#4A5570",textTransform:"uppercase",marginBottom:16}}>Душа персонажа</div>
+
+              {/* Дата рождения + место */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+                <div>
+                  <div style={{...u(10,C.muted),marginBottom:4}}>Дата рождения</div>
+                  <input type="date" value={form.birthDate} onChange={e=>set("birthDate",e.target.value)}
+                    style={{width:"100%",background:"rgba(168,192,255,0.04)",border:"1px solid rgba(168,192,255,0.12)",
+                      borderRadius:10,padding:"9px 12px",color:"#C8D4F0",fontFamily:"'DM Sans',sans-serif",fontSize:13,boxSizing:"border-box"}}/>
+                </div>
+                <div>
+                  <div style={{...u(10,C.muted),marginBottom:4}}>Место рождения</div>
+                  <input type="text" value={form.birthPlace} onChange={e=>set("birthPlace",e.target.value)}
+                    placeholder="Москва, Екатеринбург..."
+                    style={{width:"100%",background:"rgba(168,192,255,0.04)",border:"1px solid rgba(168,192,255,0.12)",
+                      borderRadius:10,padding:"9px 12px",color:"#C8D4F0",fontFamily:"'DM Sans',sans-serif",fontSize:13,boxSizing:"border-box"}}/>
+                </div>
+              </div>
+
+              {/* Шаблон */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-                {[{k:"lera",name:"Лера Вельская",desc:"Готовый архетип Муза+Исследователь (The Legend)"},{k:"empty",name:"Чистая душа",desc:"Заполнить вручную"}].map(t=>(
+                {[
+                  {k:"ai",name:"✨ AI-генерация",desc:"Claude создаст уникальную душу по данным персоны"},
+                  {k:"lera",name:"Лера Вельская",desc:"Готовый архетип Муза+Исследователь"},
+                ].map(t=>(
                   <div key={t.k} onClick={()=>set("template",t.k)}
-                    style={{padding:"14px",borderRadius:12,border:`2px solid ${form.template===t.k?"#A8C0FF":"rgba(168,192,255,0.1)"}`,cursor:"pointer",background:form.template===t.k?"rgba(168,192,255,0.1)":"rgba(168,192,255,0.03)",transition:"all .2s"}}>
+                    style={{padding:"14px",borderRadius:12,border:`2px solid ${form.template===t.k?"#A8C0FF":"rgba(168,192,255,0.1)"}`,
+                      cursor:"pointer",background:form.template===t.k?"rgba(168,192,255,0.1)":"rgba(168,192,255,0.03)",transition:"all .2s"}}>
                     <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,fontWeight:600,color:"#F0F4FF"}}>{t.name}</div>
                     <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10.5,color:"#4A5570",marginTop:4,lineHeight:1.4}}>{t.desc}</div>
                   </div>
                 ))}
               </div>
+
+              {/* Кнопка генерации */}
+              {form.template==="ai" && (
+                <button onClick={async()=>{
+                  if(!form.name) return;
+                  setGenSoul(true);
+                  try {
+                    const r = await fetch("https://api.anthropic.com/v1/messages",{
+                      method:"POST",
+                      headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+                      body:JSON.stringify({
+                        model:"claude-sonnet-4-20250514",
+                        max_tokens:2000,
+                        messages:[{role:"user",content:`Ты — психолог и архетипный аналитик. Создай глубокий психологический профиль для AI-блогера.
+
+ДАННЫЕ:
+Имя: ${form.name}
+Возраст: ${form.age}
+Город: ${form.city}
+Бренд: ${form.brand}
+Био: ${form.bio}
+Дата рождения: ${form.birthDate||"неизвестно"}
+Место рождения: ${form.birthPlace||"неизвестно"}
+
+Создай профиль в формате JSON (только JSON, без пояснений):
+{
+  "manifesto": "ключевая мысль аккаунта — одна фраза которая всё объясняет",
+  "audience": "кто её читает — конкретно",
+  "contentStrategy": "стратегия контента",
+  "visualCode": "визуальный стиль фото",
+  "contentCode": "формула контента",
+  "archetypes": "2-3 архетипа через +",
+  "mbti": "тип + название",
+  "temperament": "темперамент",
+  "enneagram": "тип + крыло + название",
+  "attachment": "тип привязанности",
+  "job": "работа/занятие",
+  "hobbies": ["увлечение1", "увлечение2", "увлечение3"],
+  "lifeGoal": "цель жизни одной фразой",
+  "dailyRhythm": "ритм дня",
+  "currentObsession": "текущая одержимость",
+  "style": "стиль одежды",
+  "taboo": "что никогда не пишет",
+  "catchphrases": "характерные фразы через запятую",
+  "wounds": [{"text":"рана","heal":30}],
+  "fears": [{"text":"страх","pwr":60}],
+  "voices": [{"who":"внутренний критик","says":"фраза"}],
+  "obsessions": [{"text":"навязчивая мысль"}],
+  "aspirations": [{"text":"стремление"}]
+}`}]
+                      })
+                    });
+                    const d = await r.json();
+                    const text = d.content?.[0]?.text?.trim()||"{}";
+                    const soul = JSON.parse(text.replace(/```json|```/g,"").trim());
+                    setGeneratedSoul(soul);
+                  } catch(e){console.error(e);}
+                  setGenSoul(false);
+                }}
+                style={{width:"100%",padding:"12px",marginBottom:12,
+                  background:genSoul?"rgba(168,192,255,0.06)":"linear-gradient(135deg,rgba(168,192,255,0.15),rgba(196,168,255,0.15))",
+                  border:"1px solid rgba(168,192,255,0.25)",borderRadius:10,
+                  color:genSoul?"#4A5570":"#A8C0FF",fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
+                  cursor:genSoul?"wait":"pointer"}}>
+                  {genSoul?"⟳ Генерирую душу...":"✨ Сгенерировать душу через AI"}
+                </button>
+              )}
+
+              {/* Превью сгенерированной души */}
+              {generatedSoul && (
+                <div style={{background:"rgba(128,255,204,0.04)",border:"1px solid rgba(128,255,204,0.15)",
+                  borderRadius:10,padding:14,marginBottom:12}}>
+                  <div style={{...u(10,C.sage,600),marginBottom:8}}>✓ Душа сгенерирована</div>
+                  <div style={{...u(11,C.ink2),lineHeight:1.6}}>
+                    <div><span style={{color:C.muted}}>Манифест:</span> {generatedSoul.manifesto}</div>
+                    <div><span style={{color:C.muted}}>Архетипы:</span> {generatedSoul.archetypes}</div>
+                    <div><span style={{color:C.muted}}>MBTI:</span> {generatedSoul.mbti}</div>
+                    <div><span style={{color:C.muted}}>Цель:</span> {generatedSoul.lifeGoal}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Ниши */}
               <div style={{...u(11,C.muted),marginBottom:8}}>Стартовые ниши:</div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
                 {NICHES_DEF.map(n=>(
-                  <button key={n.id} onClick={()=>set("niches",form.niches.includes(n.id)?form.niches.filter(x=>x!==n.id):[...form.niches,n.id])}
-                    style={{...u(10.5),padding:"5px 11px",borderRadius:8,cursor:"pointer",border:"none",background:form.niches.includes(n.id)?C.terra:C.smoke,color:form.niches.includes(n.id)?"#0A1628":C.muted,transition:"all .15s"}}>
+                  <button key={n.id}
+                    onClick={()=>set("niches",form.niches.includes(n.id)?form.niches.filter(x=>x!==n.id):[...form.niches,n.id])}
+                    style={{...u(10.5),padding:"5px 11px",borderRadius:8,cursor:"pointer",border:"none",
+                      background:form.niches.includes(n.id)?C.terra:C.smoke,
+                      color:form.niches.includes(n.id)?"#0A1628":C.muted,transition:"all .15s"}}>
                     {n.icon} {n.name}
                   </button>
                 ))}
