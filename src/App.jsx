@@ -966,6 +966,49 @@ function SoulEditor({persona, onChange}) {
       <div style={{...card(), padding:"24px", marginBottom:16}}>
         <div style={{...disp(13,C.terra,700), marginBottom:16, letterSpacing:"0.08em"}}>🎙 ГОЛОС</div>
 
+        {/* Загрузка файла */}
+        <div style={{marginBottom:12}}>
+          <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",
+            background:"rgba(168,192,255,0.06)",border:"1px solid rgba(168,192,255,0.15)",
+            borderRadius:8,padding:"8px 14px",width:"fit-content"}}>
+            <span style={{fontSize:16}}>📎</span>
+            <span style={{...u(11,C.terra,600)}}>Загрузить файл с постами (.html, .txt)</span>
+            <input type="file" accept=".html,.txt,.csv" style={{display:"none"}}
+              onChange={async e=>{
+                const file = e.target.files?.[0];
+                if(!file) return;
+                setTovLoading(true);
+                try {
+                  const text = await file.text();
+                  // Extract text from HTML if needed
+                  let extracted = text;
+                  if(file.name.endsWith(".html")) {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, "text/html");
+                    // Get all message text divs
+                    const textDivs = doc.querySelectorAll(".text");
+                    if(textDivs.length > 0) {
+                      extracted = Array.from(textDivs)
+                        .map(d => d.innerText || d.textContent)
+                        .filter(t => t.trim().length > 30)
+                        .slice(0, 50)
+                        .join("\n\n---\n\n");
+                    } else {
+                      extracted = doc.body?.innerText || doc.body?.textContent || text;
+                    }
+                  }
+                  onChange("soul",{...soul, tovSamples: extracted.slice(0, 15000)});
+                } catch(e){ console.error(e); }
+                setTovLoading(false);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          {soul.tovSamples && <div style={{...u(10,C.sage),marginTop:6}}>
+            ✓ Загружено {soul.tovSamples.length} символов
+          </div>}
+        </div>
+
         {/* Примеры постов */}
         <div style={{marginBottom:16}}>
           <div style={{...u(11,C.ink2,600), marginBottom:6}}>Примеры постов для анализа</div>
