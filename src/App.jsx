@@ -1622,6 +1622,14 @@ function MindTab({persona, onChange}) {
           <div style={{width:6,height:6,borderRadius:"50%",background:aura.c2,boxShadow:`0 0 10px ${aura.c2}`,animation:"twinkle 2s infinite 1s"}}/>
         </div>
 
+        {persona.stateComment && (
+          <div style={{...card(),padding:"12px 16px",marginBottom:16,borderLeft:`2px solid ${aura.c1}`,background:"rgba(255,255,255,0.02)",marginTop:16,width:"100%",maxWidth:480}}>
+            <div style={{...u(9,C.muted),marginBottom:4,letterSpacing:1}}>СОСТОЯНИЕ СЕГОДНЯ</div>
+            <div style={{...serif(13,C.ink2),lineHeight:1.6,fontStyle:"italic"}}>{persona.stateComment}</div>
+            <div style={{...u(9,C.muted),marginTop:6}}>обновлено {new Date().toLocaleDateString("ru",{day:"numeric",month:"long"})}</div>
+          </div>
+        )}
+
         {/* Ring gauges */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginTop:24,width:"100%",maxWidth:480}}>
           {RING.map(k=><ArcG key={k} v={st[k]} color={ST_META[k].c} icon={ST_META[k].i} label={ST_META[k].n} inv={INV.has(k)} size={90}/>)}
@@ -3622,6 +3630,98 @@ export default function PersonaOS() {
     if(!loaded) return;
     saveData("os_content", content).catch(()=>{});
   },[content,loaded]);
+
+  // ── AUTO STATE UPDATE ─────────────────────────────────
+  useEffect(()=>{
+    if(!loaded || !sel) return;
+
+    const todayKey = new Date().toDateString();
+    const lastUpdate = sel.stateUpdatedAt;
+    if(lastUpdate === todayKey) return; // уже обновляли сегодня
+
+    (async()=>{
+      try {
+        const soul = sel.soul || {};
+        const st = sel.state || ST_DEF;
+        const aura = computeAura(st);
+
+        // Лунный цикл
+        const lunarDay = Math.floor((Date.now() / 86400000 - 18550) % 29.5);
+        const lunarPhase = lunarDay < 7 ? "растущая луна" : lunarDay < 15 ? "полнолуние" : lunarDay < 22 ? "убывающая луна" : "новолуние";
+
+        const r = await fetch("https://api.anthropic.com/v1/messages",{
+          method:"POST",
+          headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body:JSON.stringify({
+            model:"claude-sonnet-4-20250514",
+            max_tokens:600,
+            messages:[{role:"user",content:`Ты психолог. Рассчитай эмоциональное состояние персонажа на сегодня.
+
+ПЕРСОНАЖ: ${sel.name}, ${sel.age} лет, ${sel.city}
+MBTI: ${soul.psycho?.mbti||""}
+ТЕМПЕРАМЕНТ: ${soul.psycho?.temperament||""}
+ЭННЕАГРАММА: ${soul.psycho?.enneagram||""}
+ЗНАК СОЛНЦА: ${soul.zodiac?.sun||""}
+ЗНАК ЛУНЫ: ${soul.zodiac?.moon||""}
+
+ТЕКУЩИЕ ЗНАЧЕНИЯ (0-100):
+Настроение: ${st.mood}, Энергия: ${st.energy}, Уверенность: ${st.confidence}
+Тревога: ${st.anxiety}, Творчество: ${st.creativity}, Одиночество: ${st.loneliness}
+Авантюризм: ${st.adventureDrive}, Самоценность: ${st.selfWorth}, Благодарность: ${st.gratitude}
+Связь с телом: ${st.bodyConnection}, Присутствие: ${st.presenceFeel}
+Денежная тревога: ${st.moneyAnxiety}, Импульс трат: ${st.spendingImpulse}
+Качество сна: ${st.sleepQuality}, Внутренний критик: ${st.innerCriticVolume}, Контроль: ${st.controlUrge}
+
+КОНТЕКСТ СЕГОДНЯ:
+Дата: ${new Date().toLocaleDateString("ru",{weekday:"long",day:"numeric",month:"long"})}
+Сезон: ${getSeason()}
+Лунная фаза: ${lunarPhase} (день ${lunarDay} из 29)
+Аура сейчас: ${aura.label}
+
+Учти психотип, знаки, день недели, сезон и лунную фазу.
+Верни ТОЛЬКО JSON без пояснений — новые значения всех параметров (небольшие изменения ±5-15 от текущих, не резкие скачки):
+{
+  "mood": число,
+  "energy": число,
+  "confidence": число,
+  "anxiety": число,
+  "creativity": число,
+  "loneliness": число,
+  "adventureDrive": число,
+  "homesickness": число,
+  "selfWorth": число,
+  "gratitude": число,
+  "bodyConnection": число,
+  "presenceFeel": число,
+  "moneyAnxiety": число,
+  "spendingImpulse": число,
+  "financialSecurity": число,
+  "sleepQuality": число,
+  "innerCriticVolume": число,
+  "controlUrge": число,
+  "stateComment": "одно предложение — почему такое состояние сегодня"
+}`}]
+          })
+        });
+
+        const d = await r.json();
+        const text = d.content?.[0]?.text?.trim()||"{}";
+        const newState = JSON.parse(text.replace(/```json|```/g,"").trim());
+        const { stateComment, ...stateValues } = newState;
+
+        // Clamp all values 0-100
+        const clamped = Object.fromEntries(
+          Object.entries(stateValues).map(([k,v])=>[k, Math.max(0,Math.min(100,Math.round(v)))])
+        );
+
+        updatePersona(sel.id, "state", clamped);
+        updatePersona(sel.id, "stateUpdatedAt", todayKey);
+        updatePersona(sel.id, "stateComment", stateComment||"");
+
+        console.log("State auto-updated:", stateComment);
+      } catch(e){ console.error("Auto state update failed:", e); }
+    })();
+  }, [loaded, sel?.id]);
 
   // ── PERSONA CRUD ──────────────────────────────────────
   const createPersona = p => {
