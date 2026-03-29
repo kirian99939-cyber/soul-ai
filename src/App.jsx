@@ -980,6 +980,32 @@ function SoulEditor({persona, onChange}) {
             const text = d.content?.[0]?.text?.trim()||"{}";
             const planets = JSON.parse(text.replace(/```json|```/g,"").trim());
             onChange("soul",{...soul, zodiac:{...soul.zodiac, ...planets}, birthTime:soul.birthTime, birthPlace:soul.birthPlace});
+
+            const natalRes = await fetch("https://api.anthropic.com/v1/messages",{
+              method:"POST",
+              headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+              body:JSON.stringify({
+                model:"claude-sonnet-4-20250514",
+                max_tokens:600,
+                messages:[{role:"user",content:`Ты астролог-психолог. Напиши живое поэтичное описание натальной карты для персонажа.
+
+ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
+СОЛНЦЕ: ${planets.sun}
+ЛУНА: ${planets.moon||"неизвестно"}
+АСЦЕНДЕНТ: ${planets.rising||"неизвестно"}
+ВЕНЕРА: ${planets.venus||""}
+МАРС: ${planets.mars||""}
+МЕРКУРИЙ: ${planets.mercury||""}
+ЮПИТЕР: ${planets.jupiter||""}
+САТУРН: ${planets.saturn||""}
+МЕСТО РОЖДЕНИЯ: ${soul.birthPlace||"неизвестно"}
+
+Напиши описание на русском — 5-7 предложений. Стиль: психологично, поэтично, без банальщины. Как будто ты видишь душу человека через карту. Начни с Солнца, потом Луна, потом ключевые аспекты личности из других планет.`}]
+              })
+            });
+            const natalData = await natalRes.json();
+            const natalChart = natalData.content?.[0]?.text?.trim()||"";
+            onChange("soul",{...soul, zodiac:{...soul.zodiac, ...planets}, birthTime:soul.birthTime, birthPlace:soul.birthPlace, natalChart});
           } catch(e){console.error(e);}
           setAstroLoading(false);
         }}
