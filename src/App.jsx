@@ -233,6 +233,7 @@ ${s.manifesto ? `МАНИФЕСТ АККАУНТА: ${s.manifesto}` : ""}
 ${s.audience ? `АУДИТОРИЯ: ${s.audience}` : ""}
 ${s.contentStrategy ? `СТРАТЕГИЯ: ${s.contentStrategy}` : ""}
 ${s.contentCode ? `КОД КОНТЕНТА: ${s.contentCode}` : ""}
+${s.tov ? `\nТОН И ГОЛОС АВТОРА:\n${s.tov}` : ""}
 ${s.job ? `\nРАБОТА: ${s.job}` : ""}
 ${s.hobbies?.length ? `\nУВЛЕЧЕНИЯ: ${s.hobbies.join(", ")}` : ""}
 ${s.lifeGoal ? `\nЦЕЛЬ ЖИЗНИ: ${s.lifeGoal}` : ""}
@@ -760,6 +761,7 @@ function RadialMindMap({ soul }) {
 // ── SOUL EDITOR ──────────────────────────────────────────
 function SoulEditor({persona, onChange}) {
   const [open, setOpen] = useState(null);
+  const [tovLoading, setTovLoading] = useState(false);
   const soul = persona.soul || {};
   const upd = useCallback((path, val) => {
     const s = JSON.parse(JSON.stringify(soul));
@@ -958,6 +960,105 @@ function SoulEditor({persona, onChange}) {
             style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"#C8D4F0",lineHeight:1.5}}
             ph="Как строится каждый пост..." multi/>
         </div>
+      </div>
+
+      {/* ── TOV ── */}
+      <div style={{...card(), padding:"24px", marginBottom:16}}>
+        <div style={{...disp(13,C.terra,700), marginBottom:16, letterSpacing:"0.08em"}}>🎙 ГОЛОС</div>
+
+        {/* Примеры постов */}
+        <div style={{marginBottom:16}}>
+          <div style={{...u(11,C.ink2,600), marginBottom:6}}>Примеры постов для анализа</div>
+          <div style={{...u(10,C.muted), marginBottom:8}}>Вставь 5-10 реальных постов автора — каждый с новой строки через пустую строку</div>
+          <textarea
+            value={soul.tovSamples||""}
+            onChange={e=>onChange("soul",{...soul, tovSamples:e.target.value})}
+            placeholder={"Пост 1...\n\nПост 2...\n\nПост 3..."}
+            style={{width:"100%",minHeight:200,background:"rgba(255,255,255,0.03)",
+              border:"1px solid rgba(168,192,255,0.1)",borderRadius:10,padding:12,
+              color:C.ink,fontFamily:F.b,fontSize:12,lineHeight:1.6,resize:"vertical",
+              boxSizing:"border-box"}}
+          />
+        </div>
+
+        {/* Кнопка анализа */}
+        <button onClick={async()=>{
+          if(!soul.tovSamples?.trim()) return;
+          setTovLoading(true);
+          try {
+            const r = await fetch("https://api.anthropic.com/v1/messages",{
+              method:"POST",
+              headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+              body:JSON.stringify({
+                model:"claude-sonnet-4-20250514",
+                max_tokens:1500,
+                messages:[{role:"user",content:`Ты — редактор и копирайтер. Проанализируй эти посты и создай детальную карточку Tone of Voice автора.
+
+ПОСТЫ:
+${soul.tovSamples}
+
+Создай карточку TOV в следующем формате (пиши по-русски, конкретно и практично):
+
+**РИТМ И СТРУКТУРА:**
+- Длина предложений (короткие/длинные/смешанные)
+- Абзацы (как разбивает текст)
+- Любимые структуры (вопрос-ответ, список, история и т.д.)
+
+**ЛЕКСИКА:**
+- Характерные слова и выражения (приведи 10-15 примеров)
+- Регистр (формальный/разговорный/сленг)
+- Отношение к мату/грубым словам
+- Чего никогда не говорит
+
+**ЭМОЦИОНАЛЬНЫЙ ДИАПАЗОН:**
+- Основные эмоции в текстах
+- Как выражает радость/злость/иронию
+- Степень уязвимости и открытости
+
+**ХАРАКТЕРНЫЕ ПРИЁМЫ:**
+- Риторические вопросы (как использует)
+- Самоирония (есть/нет/как)
+- Обращение к читателю (ты/вы/ребят/друг и т.д.)
+- Юмор (какой тип, как дозирует)
+
+**ЗАПРЕЩЁННЫЕ ТЕМЫ И СЛОВА:**
+- Что автор никогда не напишет
+- Какие слова/обороты чужды этому голосу
+
+**ПРИМЕРЫ ФРАЗ-ДНК:**
+Приведи 5-7 коротких фраз которые максимально передают голос автора
+
+**ИНСТРУКЦИЯ ДЛЯ КОПИРАЙТЕРА:**
+В 3-4 предложениях — как писать В СТИЛЕ этого автора, не копируя.`}]
+              })
+            });
+            const d = await r.json();
+            const tov = d.content?.[0]?.text?.trim()||"";
+            onChange("soul",{...soul, tov, tovSamples:soul.tovSamples});
+          } catch(e){console.error(e);}
+          setTovLoading(false);
+        }}
+        style={{width:"100%",padding:"10px",background:"rgba(168,192,255,0.08)",
+          border:"1px solid rgba(168,192,255,0.2)",borderRadius:8,
+          color:tovLoading?"#4A5570":"#A8C0FF",fontFamily:F.b,fontSize:11,fontWeight:600,
+          cursor:tovLoading?"wait":"pointer",marginBottom:16}}>
+          {tovLoading?"⟳ Анализирую голос...":"✦ Проанализировать голос"}
+        </button>
+
+        {/* TOV карточка */}
+        {soul.tov && (
+          <div>
+            <div style={{...u(11,C.ink2,600),marginBottom:8}}>Карточка голоса</div>
+            <textarea
+              value={soul.tov}
+              onChange={e=>onChange("soul",{...soul, tov:e.target.value})}
+              style={{width:"100%",minHeight:300,background:"rgba(255,255,255,0.03)",
+                border:"1px solid rgba(128,255,204,0.15)",borderRadius:10,padding:12,
+                color:C.ink2,fontFamily:F.b,fontSize:11,lineHeight:1.7,resize:"vertical",
+                boxSizing:"border-box"}}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── LIFE PROFILE ── */}
@@ -1828,6 +1929,7 @@ ${soul.manifesto ? `МАНИФЕСТ: ${soul.manifesto}` : ""}
 ${soul.audience ? `АУДИТОРИЯ: ${soul.audience}` : ""}
 ${soul.contentStrategy ? `СТРАТЕГИЯ: ${soul.contentStrategy}` : ""}
 ${soul.contentCode ? `КОД КОНТЕНТА: ${soul.contentCode}` : ""}
+${soul.tov ? `\nТОН И ГОЛОС АВТОРА:\n${soul.tov}` : ""}
 ${soul.job ? `\nРАБОТА: ${soul.job}` : ""}
 ${soul.hobbies?.length ? `\nУВЛЕЧЕНИЯ: ${soul.hobbies.join(", ")}` : ""}
 ${soul.lifeGoal ? `\nЦЕЛЬ ЖИЗНИ: ${soul.lifeGoal}` : ""}
