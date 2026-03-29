@@ -925,6 +925,71 @@ function SoulEditor({persona, onChange}) {
           />
         </div>
 
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+          <div>
+            <div style={{...u(10,C.muted),marginBottom:4}}>Время рождения</div>
+            <input type="time"
+              value={soul.birthTime||""}
+              onChange={e=>onChange("soul",{...soul,birthTime:e.target.value})}
+              style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(168,192,255,0.1)",
+                borderRadius:8,padding:"8px 12px",color:C.ink,fontFamily:F.b,fontSize:13,boxSizing:"border-box"}}/>
+          </div>
+          <div>
+            <div style={{...u(10,C.muted),marginBottom:4}}>Место рождения</div>
+            <input type="text"
+              value={soul.birthPlace||""}
+              onChange={e=>onChange("soul",{...soul,birthPlace:e.target.value})}
+              placeholder="Москва, Екатеринбург..."
+              style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(168,192,255,0.1)",
+                borderRadius:8,padding:"8px 12px",color:C.ink,fontFamily:F.b,fontSize:13,boxSizing:"border-box"}}/>
+          </div>
+        </div>
+
+        <button onClick={async()=>{
+          if(!soul.birthDate) return;
+          setAstroLoading(true);
+          try {
+            const r = await fetch("https://api.anthropic.com/v1/messages",{
+              method:"POST",
+              headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+              body:JSON.stringify({
+                model:"claude-sonnet-4-20250514",
+                max_tokens:400,
+                messages:[{role:"user",content:`Ты астролог. Рассчитай положения планет для натальной карты.
+
+ДАТА РОЖДЕНИЯ: ${soul.birthDate}
+ВРЕМЯ РОЖДЕНИЯ: ${soul.birthTime||"неизвестно"}
+МЕСТО РОЖДЕНИЯ: ${soul.birthPlace||"неизвестно"}
+
+Верни ТОЛЬКО JSON без пояснений:
+{
+  "sun": "знак зодиака",
+  "moon": "знак зодиака",
+  "rising": "знак зодиака (если нет времени — напиши null)",
+  "venus": "знак зодиака",
+  "mars": "знак зодиака",
+  "mercury": "знак зодиака",
+  "jupiter": "знак зодиака",
+  "saturn": "знак зодиака"
+}
+
+Используй русские названия знаков. Если время неизвестно — rising: null.`}]
+              })
+            });
+            const d = await r.json();
+            const text = d.content?.[0]?.text?.trim()||"{}";
+            const planets = JSON.parse(text.replace(/```json|```/g,"").trim());
+            onChange("soul",{...soul, zodiac:{...soul.zodiac, ...planets}, birthTime:soul.birthTime, birthPlace:soul.birthPlace});
+          } catch(e){console.error(e);}
+          setAstroLoading(false);
+        }}
+        style={{width:"100%",padding:"9px",background:"rgba(196,168,255,0.06)",
+          border:"1px solid rgba(196,168,255,0.15)",borderRadius:8,
+          color:astroLoading?"#4A5570":C.clay,fontFamily:F.b,fontSize:11,fontWeight:600,
+          cursor:astroLoading?"wait":"pointer",marginBottom:16}}>
+          {astroLoading?"⟳ Рассчитываю...":"⟳ Рассчитать планеты автоматически"}
+        </button>
+
         {/* Знак зодиака + планеты */}
         {soul.zodiac && (
           <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
@@ -942,6 +1007,18 @@ function SoulEditor({persona, onChange}) {
               borderRadius:10,padding:"8px 14px"}}>
               <div style={{...u(9,C.muted),marginBottom:2}}>АСЦЕНДЕНТ</div>
               <div style={{...u(13,C.sage,600)}}>{soul.zodiac.rising}</div>
+            </div>}
+            {soul.zodiac?.mercury && <div style={{background:"rgba(255,213,128,0.08)",border:"1px solid rgba(255,213,128,0.2)",borderRadius:10,padding:"8px 14px"}}>
+              <div style={{...u(9,C.muted),marginBottom:2}}>МЕРКУРИЙ</div>
+              <div style={{...u(13,C.amber,600)}}>{soul.zodiac.mercury}</div>
+            </div>}
+            {soul.zodiac?.jupiter && <div style={{background:"rgba(128,224,255,0.08)",border:"1px solid rgba(128,224,255,0.2)",borderRadius:10,padding:"8px 14px"}}>
+              <div style={{...u(9,C.muted),marginBottom:2}}>ЮПИТЕР</div>
+              <div style={{...u(13,C.teal,600)}}>{soul.zodiac.jupiter}</div>
+            </div>}
+            {soul.zodiac?.saturn && <div style={{background:"rgba(255,128,192,0.08)",border:"1px solid rgba(255,128,192,0.2)",borderRadius:10,padding:"8px 14px"}}>
+              <div style={{...u(9,C.muted),marginBottom:2}}>САТУРН</div>
+              <div style={{...u(13,C.rose,600)}}>{soul.zodiac.saturn}</div>
             </div>}
           </div>
         )}
