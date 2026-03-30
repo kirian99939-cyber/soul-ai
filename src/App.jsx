@@ -229,7 +229,7 @@ const EMPTY_SOUL = () => ({
 });
 
 // ── BUILD PROMPT ─────────────────────────────────────────
-const buildPrompt = (p, sel, ctx, num) => {
+const buildPrompt = (p, sel, ctx, num, studioSliders) => {
   const s = p.soul, st = p.state;
   const wounds  = s.wounds?.map(w=>`"${w.text}" (${w.heal}%)`).join("; ")||"";
   const fears   = s.fears?.map(f=>`${f.text} (${f.pwr}%)`).join("; ")||"";
@@ -277,6 +277,23 @@ ${s.dailyRhythm ? `\nРИТМ ДНЯ: ${s.dailyRhythm}` : ""}
 - Цепляющий хук с первого слова
 - 1-4 абзаца, 0-1 эмодзи
 - Пронизан личным опытом и ранами персонажа
+
+СТИЛЬ ПИСЬМА ДЛЯ THREADS:
+- Пиши как живой человек в телефоне, не как редактор журнала
+- Иногда незаконченные мысли... или многоточие посередине
+- Скобки для мыслей вслух (вот это вот да)
+- Строчные в начале если так ощущается
+- Никаких идеальных запятых везде — пиши как говоришь
+- Короткие абзацы. Иногда одно слово.
+- Без вводных "Я думаю что" или "Мне кажется" — просто говори
+- Эмодзи только если реально уместно, не для красоты
+- Ирония через недосказанность, не через объяснение что это ирония
+
+ТОНАЛЬНОСТЬ (учитывай эти настройки):
+- Ироничность: ${studioSliders?.irony||50}/100 ${(studioSliders?.irony||50)>70?"(максимальная самоирония, всё через иронию)":(studioSliders?.irony||50)<30?"(серьёзно, без шуток)":"(лёгкая ирония иногда)"}
+- Уязвимость: ${studioSliders?.vulnerability||50}/100 ${(studioSliders?.vulnerability||50)>70?"(очень открыто, без защиты)":(studioSliders?.vulnerability||50)<30?"(держит дистанцию)":"(баланс)"}
+- Энергия: ${studioSliders?.energy||50}/100 ${(studioSliders?.energy||50)>70?"(высокая энергия, восклицания, движение)":(studioSliders?.energy||50)<30?"(тихо, медленно, вдумчиво)":"(средняя энергия)"}
+- Провокация: ${studioSliders?.provocation||50}/100 ${(studioSliders?.provocation||50)>70?"(говорит то что другие боятся, задевает нервы)":(studioSliders?.provocation||50)<30?"(мягко, никого не задевает)":"(иногда острое)"}
 
 Верни ТОЛЬКО валидный JSON-массив без markdown:
 [{"text":"...","format":"название формата","topic":"тема","tag":"одно_слово","why":"причина успеха"}]`;
@@ -1685,6 +1702,12 @@ function StudioTab({persona, onSave, onSavePhoto}) {
   const [dayPulse, setDayPulse] = useState({ weather:"" });
   const [photoCount, setPhotoCount] = useState(3);
   const [trendSrc, setTrendSrc] = useState("internal"); // "internal" | "live"
+  const [studioSliders, setStudioSliders] = useState({
+    irony: 40,
+    vulnerability: 50,
+    energy: 60,
+    provocation: 35,
+  });
 
   const { trends: liveTrends, loading: trendsLoading, fetchedAt, refresh: refreshTrends } = useTrends();
 
@@ -1717,7 +1740,7 @@ function StudioTab({persona, onSave, onSavePhoto}) {
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2200,messages:[{role:"user",content:buildPrompt(persona,{formats,topics},ctx,num)}]}),
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2200,messages:[{role:"user",content:buildPrompt(persona,{formats,topics},ctx,num,studioSliders)}]}),
       });
       const d = await r.json();
       const txt = d.content?.map(i=>i.text||"").join("")||"";
@@ -1963,6 +1986,33 @@ function StudioTab({persona, onSave, onSavePhoto}) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Tone sliders */}
+      <div style={{...card(),padding:"16px 20px",marginBottom:12}}>
+        <div style={{...u(10,C.muted,700),letterSpacing:2,marginBottom:12,textTransform:"uppercase"}}>Тональность</div>
+        {[
+          {k:"irony",l:"Ироничность",
+            hints:[[0,"серьёзно"],[40,"чуть иронии"],[70,"всё через иронию"],[90,"сарказм"]]},
+          {k:"vulnerability",l:"Уязвимость",
+            hints:[[0,"закрыта"],[40,"намёки"],[70,"открыто"],[90,"без кожи"]]},
+          {k:"energy",l:"Энергия",
+            hints:[[0,"тихо"],[40,"спокойно"],[70,"активно"],[90,"взрыв"]]},
+          {k:"provocation",l:"Провокация",
+            hints:[[0,"мягко"],[40,"иногда остро"],[70,"задевает"],[90,"на грани"]]},
+        ].map(({k,l,hints})=>{
+          const val = studioSliders[k];
+          const hint = hints.reduce((a,b)=>val>=b[0]?b:a,hints[0]);
+          return (
+            <div key={k} style={{marginBottom:10,display:"flex",alignItems:"center",gap:10}}>
+              <div style={{...u(10,C.ink2),width:90,flexShrink:0}}>{l}</div>
+              <input type="range" min={0} max={100} value={val}
+                onChange={e=>setStudioSliders(p=>({...p,[k]:+e.target.value}))}
+                style={{flex:1,accentColor:"#A8C0FF"}}/>
+              <div style={{...u(9,C.terra),fontStyle:"italic",width:100,textAlign:"right"}}>"{hint[1]}"</div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Generate */}
