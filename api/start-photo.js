@@ -192,6 +192,20 @@ ${arcArchetype === "chaos" ? `
 - Color: oversaturated, blown highlights, colors bleeding into each other
 - Imperfections: heavy motion blur, ISO noise cranked up, accidental double exposure
 - Composition: rules completely broken — subject half out of frame, horizon tilted, chaos` : ""}
+
+${arcArchetype === "adventure" ? `
+🚀 ПРИКЛЮЧЕНЧЕСКИЙ РЕЖИМ — Visual language of pure adrenaline:
+- Camera: extreme angles only — fisheye distortion, dutch tilt 25-35 degrees, from below looking up
+- ALWAYS mid-action: jumping, running, spinning, climbing, hanging — never standing still
+- Motion blur on background and limbs, face stays sharp
+- Unexpected locations: rooftops, moving vehicles, market crowds, cliffs, doorways, fire escapes
+- Expression: mouth open laughing or screaming, eyes wild, completely unhinged joy, zero self-consciousness
+- Someone in background always looks shocked at what she's doing
+- Multiple light sources clashing: neon + sunlight + shadow all in one frame
+- Imperfections: tilted horizon, slight finger in frame, accidental flare, blown highlights
+- Color: high contrast, punchy, oversaturated in a real-life way — not filtered
+- Format 4:5 but composition feels like it wants to burst out of the frame
+- NEVER: standing posed, calm expression, empty background, clean composition` : ""}
 ` : ""}
 
 ALWAYS: natural light, not posed, real skin texture, imperfect composition, RAW look
