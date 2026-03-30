@@ -118,10 +118,17 @@ CAMERA: randomly pick one:
 - "iPhone 14 snapshot, imperfect framing, one-handed"
 - "phone camera, caught mid-movement, natural"
 
-FILM: randomly pick one:
-- "Kodak Portra 400, warm grain"
-- "Fujifilm aesthetic, punchy shadows"
-- "ISO 1600 digital noise, raw snapshot"
+FILM LOOK — choose based on context:
+- If this is a photoshoot/editorial context: "clean sharp colors, natural contrast, editorial quality, no grain, crisp details"
+- If this is a casual everyday moment: "subtle digital noise, natural colors, no color grading, no filters, no yellow tint, no vintage look"
+- NEVER use: yellow tint, warm filter, Kodak Portra color cast, oversaturated warm tones, vintage film look, heavy grain
+
+REALISM RULES:
+- Colors must be natural and accurate — no artificial warming or cooling
+- Skin tones must be realistic — no orange, no yellow cast
+- If outdoor daylight: cool natural light, accurate white balance
+- If indoor: realistic indoor lighting, no fake warmth
+- The photo should look like it came straight from an iPhone camera roll — unedited, no VSCO, no Lightroom presets
 
 ${arcArchetype ? `
 ARC ARCHETYPE VISUAL RULES — this is the most important styling directive:
