@@ -2159,6 +2159,11 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
   const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3, personaCity = "", arcArchetype = null, outfitRefImage = null) => {
+    console.log("generateArcPhoto called:", arcId, dayIndex, "arcId type:", typeof arcId);
+    if(!arcId) {
+      console.error("arcId is null/undefined! Cannot save photos.");
+      return;
+    }
     const key = photoKey(arcId, dayIndex);
     setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
@@ -2810,7 +2815,10 @@ ${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — и
                       </button>
                     ))}
                   </div>
-                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype, arcDayOutfitRef[`${expandedArc}_${selDay}`] || null)}
+                  <button onClick={()=>{
+                    if(!expandedArc) { console.error("No arc selected!"); return; }
+                    generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype, arcDayOutfitRef[`${expandedArc}_${selDay}`]||null);
+                  }}
                     disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
                       color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",
