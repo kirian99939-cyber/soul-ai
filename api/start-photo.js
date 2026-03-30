@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, arcContext } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairHex = ap.hair || "#888888";
@@ -73,7 +73,16 @@ Read carefully and extract:
 
 NARRATIVE BIT: "${narrativeBit || ""}"
 POST TEXT: "${postText}"
-PROFILE CITY: ${city || "unknown"}
+ARC CONTEXT (overall journey): "${arcContext || ""}"
+PROFILE CITY: ${personaCity || persona?.city || "unknown"}
+
+LOCATION PRIORITY:
+1. Explicit location in narrative bit → use that
+2. Explicit location in post text → use that
+3. Location implied by arc context (Point A → Point B journey) → use that
+4. Profile city → use as fallback
+
+IMPORTANT: If arc context mentions Thailand/Bali/Japan/etc — ALL photos in this arc should feel like that country even if not explicitly stated in the day's narrative.
 
 STEP 2 — WRITE PHOTO PROMPT for shot №${(shotIndex||0)+1} of ${totalShots||3}:
 

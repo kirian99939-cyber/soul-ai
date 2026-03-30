@@ -2208,7 +2208,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
 
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
-  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3, personaCity = "", arcArchetype = null, outfitRefImage = null) => {
+  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3, personaCity = "", arcArchetype = null, outfitRefImage = null, arcContext = "") => {
     console.log("generateArcPhoto called:", arcId, dayIndex, "arcId type:", typeof arcId);
     if(!arcId) {
       console.error("arcId is null/undefined! Cannot save photos.");
@@ -2268,6 +2268,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             arcArchetype,
             outfitDescription,
             outfitRefImage: outfitRefImage || null,
+            arcContext,
           }),
         }).then(r => r.json())
       ));
@@ -2889,7 +2890,7 @@ ${arcArchetype==="adventure" ? `\n🚀 ПРИКЛЮЧЕНЧЕСКИЙ РЕЖИМ
                   </div>
                   <button onClick={()=>{
                     if(!expandedArc) { console.error("No arc selected!"); return; }
-                    generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype, arcDayOutfitRef[`${expandedArc}_${selDay}`]||null);
+                    generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype, arcDayOutfitRef[`${expandedArc}_${selDay}`]||null, `${ptA || ""} → ${ptB || ""}. ${persona.city || ""}`);
                   }}
                     disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
