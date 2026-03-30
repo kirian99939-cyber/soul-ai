@@ -2230,6 +2230,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
           if(resolved === 1) setGenArcPhoto(prev => ({...prev, [key]: false}));
           setArcPhotos(prev => {
             const updated = { ...prev, [key]: results_.filter(Boolean) };
+            console.log("Saving arc photos for persona:", persona.id, "key:", key);
             saveData("arc_photos_" + persona.id, updated).catch(console.error);
             if(onSavePhoto) results_.filter(Boolean).forEach(url => onSavePhoto({ imageUrl: url, postText, context: "arc" }));
             return updated;
@@ -2250,6 +2251,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
     }).catch(()=>{});
     loadData("arc_photos_" + persona.id).then(data => {
       if(data) setArcPhotos(data);
+      console.log("Loaded arc photos for persona:", persona.id, data);
     }).catch(()=>{});
   }, [persona.id]);
 
