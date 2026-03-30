@@ -2380,7 +2380,8 @@ ${ptB}
 }]
 ${soul.tov ? `\nТОН И ГОЛОС АВТОРА (строго соблюдай):\n${soul.tov}` : ""}
 ${soul.astroProfile ? `\nАСТРОЛОГИЧЕСКИЙ ПРОФИЛЬ:\n${soul.astroProfile}` : ""}
-${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — идёт на страшное и преодолевает",depth:"Погружение — уходит внутрь, медленно и честно",break:"Разрыв — что-то сломалось, боль и свобода",discovery:"Открытие — находит новое в себе и мире",masquerade:"Маскарад — играет роли, ищет себя",chaos:"Отрыв — полный хаос, без правил, без тормозов, без ума"}[arcArchetype]}` : ""}
+${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — идёт на страшное и преодолевает",depth:"Погружение — уходит внутрь, медленно и честно",break:"Разрыв — что-то сломалось, боль и свобода",discovery:"Открытие — находит новое в себе и мире",masquerade:"Маскарад — играет роли, ищет себя",chaos:"Отрыв — полный хаос, без правил, без тормозов, без ума",adventure:"Приключение — максимум безбашенности, каждый день вызов судьбе"}[arcArchetype]}` : ""}
+${arcArchetype==="adventure" ? `\n🚀 ПРИКЛЮЧЕНЧЕСКИЙ РЕЖИМ — МАКСИМАЛЬНАЯ БЕЗБАШЕННОСТЬ:\nКаждый день — невозможное приключение которое она не планировала. Нестандартные решения, прыжки в неизвестность, знакомства с незнакомцами. Каждый пост начинается с действия — она уже в процессе. Финальный день настолько дикий что читатель думает: это реально было? ЗАПРЕЩЕНО: нудная рефлексия, скучные дни, предсказуемые повороты.` : ""}
 
 НАСТРОЙКИ:
 - Интенсивность: ${arcSliders.intensity}/100 (${arcSliders.intensity < 30 ? "тихий дневник" : arcSliders.intensity < 70 ? "сбалансировано" : "американские горки"})
@@ -2529,6 +2530,27 @@ ${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — и
                 <div style={{...u(10,C.muted),lineHeight:1.4}}>{a.d}</div>
               </div>
             ))}
+          </div>
+
+          <div style={{marginTop:12}}>
+            <button onClick={()=>{
+              setArcArchetype("adventure");
+              setArcSliders({intensity:100, vulnerability:70, tone:80, pace:100});
+            }}
+              style={{width:"100%",padding:"14px",borderRadius:12,cursor:"pointer",transition:"all .2s",
+                border:`2px solid ${arcArchetype==="adventure"?"#FFD580":"rgba(255,213,128,0.2)"}`,
+                background:arcArchetype==="adventure"
+                  ?"linear-gradient(135deg,rgba(255,107,0,0.2),rgba(255,213,128,0.15))"
+                  :"rgba(255,213,128,0.04)",
+                boxShadow:arcArchetype==="adventure"?"0 0 30px rgba(255,150,0,0.3)":"none",
+                display:"flex",alignItems:"center",gap:12}}>
+              <span style={{fontSize:28}}>🚀</span>
+              <div style={{textAlign:"left"}}>
+                <div style={{...u(13,arcArchetype==="adventure"?"#FFD580":C.ink,700)}}>Приключенческий режим</div>
+                <div style={{...u(10,C.muted),marginTop:2}}>Максимум безбашенности · Нестандартные ракурсы · Каждый день — вызов судьбе</div>
+              </div>
+              {arcArchetype==="adventure" && <div style={{marginLeft:"auto",fontSize:18}}>⚡</div>}
+            </button>
           </div>
         </div>
 
