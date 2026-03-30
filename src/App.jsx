@@ -2148,6 +2148,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
   const [genArcPhoto, setGenArcPhoto] = useState({});
   const [arcPhotoCount, setArcPhotoCount] = useState(3);
   const [arcArchetype, setArcArchetype] = useState(null);
+  const [arcDayOutfitRef, setArcDayOutfitRef] = useState({});
   const [arcSliders, setArcSliders] = useState({
     intensity: 50,
     vulnerability: 50,
@@ -2157,7 +2158,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
 
   const photoKey = (arcId, dayIndex) => `${arcId}_${dayIndex}`;
 
-  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3, personaCity = "", arcArchetype = null) => {
+  const generateArcPhoto = async (arcId, dayIndex, postText, narrativeBit = "", dayTitle = "", count = 3, personaCity = "", arcArchetype = null, outfitRefImage = null) => {
     const key = photoKey(arcId, dayIndex);
     setGenArcPhoto(prev => ({...prev, [key]: true}));
     try {
@@ -2210,7 +2211,8 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             season: getSeasonVisual(),
             personaCity,
             arcArchetype,
-            outfitDescription
+            outfitDescription,
+            outfitRefImage: outfitRefImage || null,
           }),
         }).then(r => r.json())
       ));
@@ -2756,6 +2758,43 @@ ${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — и
                   </div>
                 )}
 
+                {/* Референс одежды дня */}
+                <div style={{padding:"0 18px 12px"}}>
+                  <div style={{...u(10,C.muted),marginBottom:6}}>👗 Референс одежды (необязательно)</div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",
+                      background:"rgba(255,213,128,0.06)",border:"1px solid rgba(255,213,128,0.15)",
+                      borderRadius:8,padding:"6px 12px",flex:1}}>
+                      <span style={{fontSize:14}}>📎</span>
+                      <span style={{...u(10,C.amber,600)}}>
+                        {arcDayOutfitRef[`${expandedArc}_${selDay}`] ? "✓ Одежда загружена" : "Загрузить фото одежды"}
+                      </span>
+                      <input type="file" accept="image/*" style={{display:"none"}}
+                        onChange={async e=>{
+                          const file = e.target.files?.[0];
+                          if(!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => {
+                            const base64 = ev.target.result;
+                            setArcDayOutfitRef(prev=>({...prev,[`${expandedArc}_${selDay}`]:base64}));
+                          };
+                          reader.readAsDataURL(file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {arcDayOutfitRef[`${expandedArc}_${selDay}`] && (
+                      <div style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:"1px solid rgba(255,213,128,0.2)",flexShrink:0}}>
+                        <img src={arcDayOutfitRef[`${expandedArc}_${selDay}`]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      </div>
+                    )}
+                    {arcDayOutfitRef[`${expandedArc}_${selDay}`] && (
+                      <button onClick={()=>setArcDayOutfitRef(prev=>{const n={...prev};delete n[`${expandedArc}_${selDay}`];return n;})}
+                        style={{...u(10,C.danger),background:"none",border:"none",cursor:"pointer",padding:4}}>✕</button>
+                    )}
+                  </div>
+                </div>
+
                 <div style={{padding:"0 18px 10px"}}>
                   <div style={{display:"flex",gap:6,marginBottom:6}}>
                     {[1,3,5].map(n=>(
@@ -2769,7 +2808,7 @@ ${arcArchetype ? `\nАРХЕТИП АРКИ: ${{trial:"Испытание — и
                       </button>
                     ))}
                   </div>
-                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype)}
+                  <button onClick={()=>generateArcPhoto(expandedArc, selDay, arc[selDay]?.post, arc[selDay]?.narrativeBit, arc[selDay]?.title, arcPhotoCount, persona.city, arcArchetype, arcDayOutfitRef[`${expandedArc}_${selDay}`] || null)}
                     disabled={!!genArcPhoto[photoKey(expandedArc,selDay)]}
                     style={{width:"100%",fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:600,
                       color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",

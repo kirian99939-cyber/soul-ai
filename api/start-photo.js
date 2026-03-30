@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairColor = ap.hair === "#C45518" ? "copper red curly" : "natural";
@@ -172,6 +172,7 @@ Using reference photo — preserve exact face features, copper red curly hair, b
 OUTFIT LOCK — use EXACTLY this in every shot, do not deviate:
 "${outfitDescription || "same consistent outfit throughout all shots"}"
 This outfit must be identical across all photos in this series.
+${outfitRefImage ? "REFERENCE OUTFIT IMAGE PROVIDED — use the exact clothing from the outfit reference image (image included in imageUrls). Replicate the exact colors, cut, fabric, and style of this outfit on the character." : ""}
 
 Write ONLY the final prompt in English. No analysis, no explanations.`
         }]
@@ -185,7 +186,8 @@ Write ONLY the final prompt in English. No analysis, no explanations.`
 
   // Используй этот промпт для NanoBanana
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
-  const allImageUrls = [...referencePhotos, ...locationPhotos].filter(Boolean).slice(0, 5);
+  const outfitImages = outfitRefImage ? [outfitRefImage] : [];
+  const allImageUrls = [...referencePhotos, ...outfitImages, ...locationPhotos].filter(Boolean).slice(0, 6);
 
   try {
     const submitRes = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
