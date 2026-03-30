@@ -225,6 +225,8 @@ Using reference photo — preserve exact face features, copper red curly hair, b
 OUTFIT LOCK — use EXACTLY this in every shot, do not deviate:
 "${outfitDescription || "same consistent outfit throughout all shots"}"
 This outfit must be identical across all photos in this series.
+
+ACTIVITY CHECK: If the narrative involves water/surfing/swimming → the outfit MUST be a swimsuit, wetsuit, or bikini. No regular clothes, no sneakers near water. If hiking → hiking boots and outdoor gear. Match the outfit to the physical activity described.
 ${outfitRefImage ? "REFERENCE OUTFIT IMAGE PROVIDED — use the exact clothing from the outfit reference image (image included in imageUrls). Replicate the exact colors, cut, fabric, and style of this outfit on the character." : ""}
 
 Write ONLY the final prompt in English. No analysis, no explanations.`
