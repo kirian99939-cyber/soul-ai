@@ -2297,13 +2297,6 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             const updated = { ...prev, [key]: [...(prev[key] || []), data.imageUrl] };
             if(onSavePhoto) onSavePhoto({ imageUrl: data.imageUrl, postText, context: "arc" });
             setArcSelectedPhoto(prev2 => ({ ...prev2, [key]: 0 }));
-            // Сохраняем с задержкой чтобы избежать race condition
-            setTimeout(() => {
-              setArcPhotos(latest => {
-                saveData("arc_photos_" + persona.id, latest).catch(console.error);
-                return latest;
-              });
-            }, 500);
             return updated;
           });
         } else if(data.status !== "failed") {
@@ -2312,6 +2305,14 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
       };
       await Promise.all(taskIds.map((id, i) => pollTask(id, i)));
     } catch(e) { console.error(e); }
+    // Финальное сохранение всех фото дня после завершения генерации
+    setArcPhotos(latest => {
+      if(latest[key]?.length > 0) {
+        saveData("arc_photos_" + persona.id, latest).catch(console.error);
+        console.log("Final save arc photos:", key, latest[key]?.length, "photos");
+      }
+      return latest;
+    });
     setGenArcPhoto(prev => ({...prev, [key]: false}));
   };
 
