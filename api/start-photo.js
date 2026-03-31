@@ -65,24 +65,21 @@ export default async function handler(req, res) {
           role: "user",
           content: `You are analyzing a social media post to write a photorealistic image prompt.
 
-STEP 1 — EXTRACT FROM CONTEXT:
-Read carefully and extract:
-- WHERE is she? (city/country from the narrative, not from profile)
-- WHAT is she wearing? (exact outfit described in narrative/post)
-- WHAT is happening? (the specific event/activity)
+STEP 1 — DETERMINE LOCATION (critical):
+Arc journey: "${arcContext || ""}"
+Day narrative: "${narrativeBit || ""}"
+Post text: "${postText}"
+Persona city: "${personaCity || persona?.city || ""}"
 
-NARRATIVE BIT: "${narrativeBit || ""}"
-POST TEXT: "${postText}"
-ARC CONTEXT (overall journey): "${arcContext || ""}"
-PROFILE CITY: ${personaCity || persona?.city || "unknown"}
+LOCATION RULES:
+1. Extract the COUNTRY from arc context first — this is the primary location for ALL photos
+2. If arc says "Thailand" → every photo background must look like Thailand (tropical, palm trees, thai architecture, thai people, thai aerodromes etc)
+3. If arc says "Bali" → Bali backgrounds always
+4. The specific day activity may differ but LOCATION/COUNTRY must stay consistent
+5. For skydiving in Thailand → thai aerodrome, flat rice fields visible from above, tropical landscape
+6. NEVER use generic/European/Russian backgrounds if arc specifies an exotic location
 
-LOCATION PRIORITY:
-1. Explicit location in narrative bit → use that
-2. Explicit location in post text → use that
-3. Location implied by arc context (Point A → Point B journey) → use that
-4. Profile city → use as fallback
-
-IMPORTANT: If arc context mentions Thailand/Bali/Japan/etc — ALL photos in this arc should feel like that country even if not explicitly stated in the day's narrative.
+EXTRACTED LOCATION FOR THIS PHOTO: [determine from above, be specific: "Thai aerodrome with rice fields", "Bali beach", "Tokyo street" etc]
 
 STEP 2 — WRITE PHOTO PROMPT for shot №${(shotIndex||0)+1} of ${totalShots||3}:
 
