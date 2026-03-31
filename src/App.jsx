@@ -2981,48 +2981,56 @@ ${photoIdeas.map(p => `День ${p.day}: ${p.photoIdea} (активность: 
                   <div style={{display:"flex",gap:8,alignItems:"center"}}>
                     <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",
                       background:"rgba(255,213,128,0.06)",border:"1px solid rgba(255,213,128,0.15)",
-                      borderRadius:8,padding:"6px 12px",flex:1}}>
+                      borderRadius:8,padding:"6px 12px"}}>
                       <span style={{fontSize:14}}>📎</span>
-                      <span style={{...u(10,C.amber,600)}}>
-                        {arcDayOutfitRef[`${expandedArc}_${selDay}`] ? "✓ Одежда загружена" : "Загрузить фото одежды"}
-                      </span>
-                      <input type="file" accept="image/*" style={{display:"none"}}
+                      <span style={{...u(10,C.amber,600)}}>Добавить фото одежды</span>
+                      <input type="file" accept="image/*" multiple style={{display:"none"}}
                         onChange={async e=>{
-                          const file = e.target.files?.[0];
-                          if(!file) return;
-                          const reader = new FileReader();
-                          reader.onload = ev => {
-                            // Resize image to max 800px to reduce payload size
-                            const img = new Image();
-                            img.onload = () => {
-                              const canvas = document.createElement("canvas");
-                              const maxSize = 800;
-                              let w = img.width, h = img.height;
-                              if(w > maxSize || h > maxSize) {
-                                if(w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
-                                else { w = Math.round(w * maxSize / h); h = maxSize; }
-                              }
-                              canvas.width = w; canvas.height = h;
-                              canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-                              const resized = canvas.toDataURL("image/jpeg", 0.7);
-                              setArcDayOutfitRef(prev=>({...prev,[`${expandedArc}_${selDay}`]:resized}));
+                          const files = Array.from(e.target.files||[]);
+                          if(!files.length) return;
+                          const dayKey = `${expandedArc}_${selDay}`;
+                          const existing = Array.isArray(arcDayOutfitRef[dayKey]) ? arcDayOutfitRef[dayKey] : [];
+                          const resizeImage = (file) => new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement("canvas");
+                                const maxSize = 800;
+                                let w = img.width, h = img.height;
+                                if(w > maxSize || h > maxSize) {
+                                  if(w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                                  else { w = Math.round(w * maxSize / h); h = maxSize; }
+                                }
+                                canvas.width = w; canvas.height = h;
+                                canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                                resolve(canvas.toDataURL("image/jpeg", 0.7));
+                              };
+                              img.src = ev.target.result;
                             };
-                            img.src = ev.target.result;
-                          };
-                          reader.readAsDataURL(file);
+                            reader.readAsDataURL(file);
+                          });
+                          const newImages = await Promise.all(files.map(resizeImage));
+                          setArcDayOutfitRef(prev=>({...prev,[dayKey]:[...existing,...newImages]}));
                           e.target.value = "";
                         }}
                       />
                     </label>
-                    {arcDayOutfitRef[`${expandedArc}_${selDay}`] && (
-                      <div style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:"1px solid rgba(255,213,128,0.2)",flexShrink:0}}>
-                        <img src={arcDayOutfitRef[`${expandedArc}_${selDay}`]} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    {(Array.isArray(arcDayOutfitRef[`${expandedArc}_${selDay}`]) ? arcDayOutfitRef[`${expandedArc}_${selDay}`] : arcDayOutfitRef[`${expandedArc}_${selDay}`] ? [arcDayOutfitRef[`${expandedArc}_${selDay}`]] : []).map((img, i) => (
+                      <div key={i} style={{position:"relative",flexShrink:0}}>
+                        <div style={{width:48,height:48,borderRadius:8,overflow:"hidden",border:"1px solid rgba(255,213,128,0.2)"}}>
+                          <img src={img} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                        </div>
+                        <button onClick={()=>setArcDayOutfitRef(prev=>{
+                          const dayKey=`${expandedArc}_${selDay}`;
+                          const arr = Array.isArray(prev[dayKey]) ? [...prev[dayKey]] : [];
+                          arr.splice(i,1);
+                          return {...prev,[dayKey]:arr};
+                        })} style={{position:"absolute",top:-4,right:-4,width:16,height:16,borderRadius:"50%",
+                          background:"rgba(255,96,96,0.9)",border:"none",cursor:"pointer",
+                          fontSize:10,color:"#fff",padding:0,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                       </div>
-                    )}
-                    {arcDayOutfitRef[`${expandedArc}_${selDay}`] && (
-                      <button onClick={()=>setArcDayOutfitRef(prev=>{const n={...prev};delete n[`${expandedArc}_${selDay}`];return n;})}
-                        style={{...u(10,C.danger),background:"none",border:"none",cursor:"pointer",padding:4}}>✕</button>
-                    )}
+                    ))}
                   </div>
                 </div>
 

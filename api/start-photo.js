@@ -74,6 +74,7 @@ SEASON: ${season}
 SHOT NUMBER: ${(shotIndex||0)+1} of ${totalShots||3}
 OUTFIT: ${outfitDescription || "match the activity"}
 ARCHETYPE: ${arcArchetype || "lifestyle"}
+${outfitImagesArr.length > 0 ? `OUTFIT REFERENCE IMAGES PROVIDED (${outfitImagesArr.length} photos) — study these images carefully and replicate EXACTLY: the colors, cut, fabric texture, and style of the clothing shown. This is the most important consistency requirement.` : ""}
 
 ${arcArchetype === "adventure" ? `
 ${photoIdea ? `
