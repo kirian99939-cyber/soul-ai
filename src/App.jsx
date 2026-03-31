@@ -2277,6 +2277,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             outfitDescription,
             outfitRefImage: outfitRefImage || null,
             arcContext,
+            photoIdea: arc[dayIndex]?.photoIdea || "",
           }),
         }).then(r => r.json())
       ));
@@ -2435,6 +2436,95 @@ ${arcArchetype==="adventure" ? `
   const generate = async () => {
     setGenning(true); setArc([]); setSelDay(null);
     try {
+      if(arcArchetype === "adventure") {
+        // Шаг 1: генерируем безумные идеи фото для каждого дня
+        const photoIdeasRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2000,
+            messages: [{role:"user", content:`Ты — безумный кинематографический фотограф. Придумай ${days} диких идей для фото для приключенческой арки.
+
+ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
+ТОЧКА А: ${ptA}
+ТОЧКА Б: ${ptB}
+ЛОКАЦИЯ: ${persona.city}
+СЕЗОН: ${getSeason()}
+
+Для каждого дня придумай ОДНУ безумную идею фото — конкретный момент, угол камеры, где находится телефон, что происходит в эту секунду.
+
+Вдохновляйся этими примерами:
+- "Телефон зажат в зубах местного рыбака — она в точке невозврата прыжка со скалы над изумрудной водой"
+- "Телефон скотчем примотан к зиплайну — снимает вперёд, она несётся с криком, джунгли размыты"
+- "Телефон упал в воду и плавает вверх объективом — она падает с SUP-борда прямо сверху"
+- "Телефон воткнут в песок под 45° — снимает снизу вверх на танцующую в неоновом свете"
+- "Телефон лежит на носу каяка — она лежит на спине протискиваясь в морскую пещеру"
+
+Верни ТОЛЬКО JSON:
+[
+  {
+    "day": 1,
+    "photoIdea": "конкретное описание кадра — где камера, что происходит, угол, момент",
+    "activity": "что она делает (прыжок/серфинг/бокс/etc)",
+    "location": "конкретное место (пляж Рейлей/джунгли Чиангмай/etc)"
+  }
+]`}]
+          })
+        });
+        const photoIdeasData = await photoIdeasRes.json();
+        if(photoIdeasData.error){ console.error("Claude photo ideas error:", photoIdeasData.error); setGenning(false); return; }
+        const photoIdeasText = photoIdeasData.content?.[0]?.text?.trim() || "[]";
+        const photoIdeas = JSON.parse(photoIdeasText.replace(/```json/g,"").replace(/```/g,"").trim());
+
+        // Шаг 2: генерируем посты на основе идей фото
+        const arcRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4000,
+            messages: [{role:"user", content:`${buildArcPrompt()}
+
+ВАЖНО — ПРИКЛЮЧЕНЧЕСКИЙ РЕЖИМ: Для каждого дня уже есть ГОТОВАЯ ИДЕЯ ФОТО. Пост должен описывать ИМЕННО ЭТОТ МОМЕНТ — как будто она только что это пережила и пишет прямо сейчас.
+
+ИДЕИ ФОТ ПО ДНЯМ:
+${photoIdeas.map(p => `День ${p.day}: ${p.photoIdea} (активность: ${p.activity}, место: ${p.location})`).join("\n")}
+
+Для каждого дня верни JSON с полями: title, narrativeBit, post, emotion, emotionIntensity, narrativeTag
+Также добавь поле: photoIdea (скопируй из идей выше)
+
+Верни массив JSON объектов.`}]
+          })
+        });
+        const arcData = await arcRes.json();
+        if(arcData.error){ console.error("Claude arc error:", arcData.error); setGenning(false); return; }
+        const arcText = arcData.content?.[0]?.text?.trim() || "[]";
+        const arcDays = JSON.parse(arcText.replace(/```json/g,"").replace(/```/g,"").trim());
+
+        // Сохраняем photoIdea в каждый день
+        const daysWithPhotoIdeas = arcDays.map((day, i) => ({
+          ...day,
+          photoIdea: photoIdeas[i]?.photoIdea || day.photoIdea || ""
+        }));
+
+        setArc(daysWithPhotoIdeas);
+        const newArc = {
+          id: uid(),
+          createdAt: new Date().toISOString(),
+          ptA, ptB, days,
+          items: daysWithPhotoIdeas,
+        };
+        setSavedArcs(prev => {
+          const updated = [newArc, ...prev];
+          saveData("arcs_" + persona.id, updated).catch(console.error);
+          return updated;
+        });
+        setExpandedArc(newArc.id);
+        setGenning(false);
+        return;
+      }
+
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
         headers:{

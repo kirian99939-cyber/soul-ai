@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, arcContext } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, arcContext, photoIdea } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairHex = ap.hair || "#888888";
@@ -76,6 +76,19 @@ OUTFIT: ${outfitDescription || "match the activity"}
 ARCHETYPE: ${arcArchetype || "lifestyle"}
 
 ${arcArchetype === "adventure" ? `
+${photoIdea ? `
+PHOTO IDEA (already conceived — build the prompt around THIS specific shot):
+"${photoIdea}"
+
+Expand this idea into a full NanoBanana prompt following the structure:
+1. Reference instruction
+2. Exact camera position (based on the idea above)
+3. The split-second moment
+4. Skin realism
+5. Natural lighting
+6. Technical imperfections
+7. Format
+` : ""}
 ADVENTURE MODE — write a prompt following THIS EXACT STRUCTURE:
 
 1. REFERENCE INSTRUCTION (always first):
