@@ -159,13 +159,13 @@ Write ONLY the prompt in English.
   console.log("Cinematic prompt:", prompt);
 
   // Используй этот промпт для NanoBanana
-  const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
+  const referencePhotos = (persona?.referencePhotos || []).slice(0, 1); // только 1 реф фото
   const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
   console.log("Outfit images count:", outfitImagesArr.length, "sizes:", outfitImagesArr.map(img => img ? Math.round(img.length/1024) + "KB" : "null"));
 
-  // Обрезаем base64 если слишком большие — берём только первые 2 и resize
-  const safeOutfitImages = outfitImagesArr.filter(Boolean).slice(0, 2);
-  const allImageUrls = [...referencePhotos, ...safeOutfitImages, ...locationPhotos].filter(Boolean).slice(0, 8);
+  // Берём только первое фото одежды
+  const safeOutfitImages = outfitImagesArr.slice(0, 1);
+  const allImageUrls = [...referencePhotos, ...safeOutfitImages].filter(Boolean).slice(0, 3);
 
   try {
     const submitRes = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
