@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   if(req.method === "OPTIONS") return res.status(200).end();
 
   const key = process.env.NANOBANANA_API_KEY;
-  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, arcContext, photoIdea } = req.body || {};
+  const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, outfitImages, arcContext, photoIdea } = req.body || {};
 
   const ap = persona?.appearance || {};
   const hairHex = ap.hair || "#888888";
@@ -150,8 +150,12 @@ Write ONLY the prompt in English.
 
   // Используй этот промпт для NanoBanana
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
-  const outfitImages = outfitRefImage ? [outfitRefImage] : [];
-  const allImageUrls = [...referencePhotos, ...outfitImages, ...locationPhotos].filter(Boolean).slice(0, 6);
+  const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
+  console.log("Outfit images count:", outfitImagesArr.length, "sizes:", outfitImagesArr.map(img => img ? Math.round(img.length/1024) + "KB" : "null"));
+
+  // Обрезаем base64 если слишком большие — берём только первые 2 и resize
+  const safeOutfitImages = outfitImagesArr.filter(Boolean).slice(0, 2);
+  const allImageUrls = [...referencePhotos, ...safeOutfitImages, ...locationPhotos].filter(Boolean).slice(0, 8);
 
   try {
     const submitRes = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
