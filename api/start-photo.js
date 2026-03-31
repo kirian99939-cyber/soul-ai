@@ -20,6 +20,9 @@ export default async function handler(req, res) {
   const key = process.env.NANOBANANA_API_KEY;
   const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, outfitImages, arcContext, photoIdea } = req.body || {};
 
+  const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
+  const safeOutfitImages = outfitImagesArr.slice(0, 1);
+
   const ap = persona?.appearance || {};
   const hairHex = ap.hair || "#888888";
   const hairDesc = {
@@ -166,11 +169,7 @@ Write ONLY the prompt in English.
 
   // Используй этот промпт для NanoBanana
   const referencePhotos = (persona?.referencePhotos || []).slice(0, 1); // только 1 реф фото
-  const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
   console.log("Outfit images count:", outfitImagesArr.length, "sizes:", outfitImagesArr.map(img => img ? Math.round(img.length/1024) + "KB" : "null"));
-
-  // Берём только первое фото одежды
-  const safeOutfitImages = outfitImagesArr.slice(0, 1);
   const allImageUrls = [...referencePhotos, ...safeOutfitImages].filter(Boolean).slice(0, 3);
 
   try {
