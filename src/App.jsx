@@ -2992,8 +2992,22 @@ ${photoIdeas.map(p => `День ${p.day}: ${p.photoIdea} (активность: 
                           if(!file) return;
                           const reader = new FileReader();
                           reader.onload = ev => {
-                            const base64 = ev.target.result;
-                            setArcDayOutfitRef(prev=>({...prev,[`${expandedArc}_${selDay}`]:base64}));
+                            // Resize image to max 800px to reduce payload size
+                            const img = new Image();
+                            img.onload = () => {
+                              const canvas = document.createElement("canvas");
+                              const maxSize = 800;
+                              let w = img.width, h = img.height;
+                              if(w > maxSize || h > maxSize) {
+                                if(w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                                else { w = Math.round(w * maxSize / h); h = maxSize; }
+                              }
+                              canvas.width = w; canvas.height = h;
+                              canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+                              const resized = canvas.toDataURL("image/jpeg", 0.7);
+                              setArcDayOutfitRef(prev=>({...prev,[`${expandedArc}_${selDay}`]:resized}));
+                            };
+                            img.src = ev.target.result;
                           };
                           reader.readAsDataURL(file);
                           e.target.value = "";
