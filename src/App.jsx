@@ -2275,7 +2275,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             personaCity,
             arcArchetype,
             outfitDescription,
-            outfitImages: Array.isArray(outfitRefImage) ? outfitRefImage.slice(0, 2) : (outfitRefImage ? [outfitRefImage] : []),
+            outfitImages: (Array.isArray(outfitRefImage) ? outfitRefImage : (outfitRefImage ? [outfitRefImage] : [])).slice(0, 2),
             arcContext,
             photoIdea: arc[dayIndex]?.photoIdea || "",
           }),
