@@ -95,18 +95,13 @@ VISUAL DNA: ${persona?.soul?.visualCode || "authentic lifestyle, real emotions"}
 SHOT TYPE for №${(shotIndex||0)+1} — pick ONE, bias heavily toward first-person and candid:
 
 FIRST-PERSON / POV shots (use for shots 1, 3, 5):
-- Classic selfie: she holds phone at arm's length slightly above, casual angle, natural expression caught mid-moment, not posed — slight camera shake, thumb visible on edge
-- Selfie in car mirror or rearview mirror, window reflection with city outside
-- Bathroom mirror selfie, phone held up, messy hair, real life background visible
-- Selfie with someone else — friend, local stranger, laughing together, candid
-- Selfie attempt gone wrong — slightly blurry, cut off, too close, but real
-- POV looking down at her own hands holding something (coffee, phone, fabric, food)
-- POV feet walking — her shoes on pavement, sand, floor, stairs
-- POV from behind her shoulder — she's looking at something ahead
-- Mirror selfie — she holds phone, sees herself, imperfect angle
-- Shadow selfie — her shadow on ground/wall, she looks down at it
-- Hand reaching into frame toward something
-- She films herself walking, camera at arm's length, slightly shaky
+- Classic selfie: shot from slightly above at arm's length, phone NOT visible in frame — crop just above where phone would be, natural smile caught mid-moment
+- Mirror selfie: she sees herself in mirror, phone reflected but held naturally at waist level, not blocking face
+- Someone else took it: friend captured her from close distance, candid, she may or may not know photo is being taken
+- Selfie stick or propped phone: phone on a surface or stick, she's a bit further away, more of her body visible, natural pose
+- POV from tripod or ledge: phone propped up, she's doing something in front of it, looks natural not posed
+
+NEVER: phone held directly in front of face blocking view, phone visible as main subject of photo, awkward arm stretch visible
 
 THIRD-PERSON candid (use for shots 2, 4):
 - Friend caught her mid-laugh from across the table
