@@ -2295,12 +2295,17 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
           if(resolved === 1) setGenArcPhoto(prev => ({...prev, [key]: false}));
           setArcPhotos(prev => {
             const updated = { ...prev, [key]: [...(prev[key] || []), data.imageUrl] };
-            console.log("Saving arc photos for persona:", persona.id, "key:", key);
-            saveData("arc_photos_" + persona.id, updated).catch(console.error);
-            if(onSavePhoto) results_.filter(Boolean).forEach(url => onSavePhoto({ imageUrl: url, postText, context: "arc" }));
+            if(onSavePhoto) onSavePhoto({ imageUrl: data.imageUrl, postText, context: "arc" });
+            setArcSelectedPhoto(prev2 => ({ ...prev2, [key]: 0 }));
+            // Сохраняем с задержкой чтобы избежать race condition
+            setTimeout(() => {
+              setArcPhotos(latest => {
+                saveData("arc_photos_" + persona.id, latest).catch(console.error);
+                return latest;
+              });
+            }, 500);
             return updated;
           });
-          setArcSelectedPhoto(prev => ({ ...prev, [key]: 0 }));
         } else if(data.status !== "failed") {
           await pollTask(taskId, i, attempt + 1);
         }
