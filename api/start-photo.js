@@ -63,165 +63,69 @@ export default async function handler(req, res) {
         max_tokens: 500,
         messages: [{
           role: "user",
-          content: `You are analyzing a social media post to write a photorealistic image prompt.
-
-STEP 1 — DETERMINE LOCATION (critical):
-Arc journey: "${arcContext || ""}"
-Day narrative: "${narrativeBit || ""}"
-Post text: "${postText}"
-Persona city: "${personaCity || persona?.city || ""}"
-
-LOCATION RULES:
-1. Extract the COUNTRY from arc context first — this is the primary location for ALL photos
-2. If arc says "Thailand" → every photo background must look like Thailand (tropical, palm trees, thai architecture, thai people, thai aerodromes etc)
-3. If arc says "Bali" → Bali backgrounds always
-4. The specific day activity may differ but LOCATION/COUNTRY must stay consistent
-5. For skydiving in Thailand → thai aerodrome, flat rice fields visible from above, tropical landscape
-6. NEVER use generic/European/Russian backgrounds if arc specifies an exotic location
-
-EXTRACTED LOCATION FOR THIS PHOTO: [determine from above, be specific: "Thai aerodrome with rice fields", "Bali beach", "Tokyo street" etc]
-
-STEP 2 — WRITE PHOTO PROMPT for shot №${(shotIndex||0)+1} of ${totalShots||3}:
-
-Rules:
-- Location MUST match the narrative (if she's in India → India, if Japan → Japan, if Istanbul → Istanbul)
-- Outfit MUST match what's described in narrative (if sari → sari, if kimono → kimono)
-- All ${totalShots||3} shots: same location, same outfit, same hair, different moments of the day
+          content: `You are a master photographer writing a hyper-specific NanoBanana Pro prompt. Study these examples of PERFECT prompts and follow the exact same structure and level of detail.
 
 CHARACTER: ${preset}
+EVENT: ${dayTitle || ""}
+NARRATIVE: ${narrativeBit || ""}
+POST: "${postText}"
+LOCATION: ${arcContext ? `Arc journey: ${arcContext}` : (city || personaCity || persona?.city || "unknown")}
 SEASON: ${season}
-VISUAL DNA: ${persona?.soul?.visualCode || "authentic lifestyle, real emotions"}
-
-SHOT TYPE for №${(shotIndex||0)+1} — pick ONE, bias heavily toward first-person and candid:
-
-FIRST-PERSON / POV shots (use for shots 1, 3, 5):
-- Classic selfie: shot from slightly above at arm's length, phone NOT visible in frame — crop just above where phone would be, natural smile caught mid-moment
-- Mirror selfie: she sees herself in mirror, phone reflected but held naturally at waist level, not blocking face
-- Someone else took it: friend captured her from close distance, candid, she may or may not know photo is being taken
-- Selfie stick or propped phone: phone on a surface or stick, she's a bit further away, more of her body visible, natural pose
-- POV from tripod or ledge: phone propped up, she's doing something in front of it, looks natural not posed
-
-NEVER: phone held directly in front of face blocking view, phone visible as main subject of photo, awkward arm stretch visible
-
-THIRD-PERSON candid (use for shots 2, 4):
-- Friend caught her mid-laugh from across the table
-- Zoomed in from distance, she doesn't know she's being photographed
-- Through a window or doorway, slice of life
-
-DETAIL shots (use for shot 3):
-- Extreme close-up: her hands, jewelry, texture of fabric, food she's eating
-- Object she's holding or touching, her fingers in frame
-
-NEVER: posed portrait facing camera directly, professional headshot angle, model pose
-
-CAMERA: randomly pick one:
-- "shot on iPhone 15 Pro, 24mm, candid, slightly tilted"
-- "iPhone 14 snapshot, imperfect framing, one-handed"
-- "phone camera, caught mid-movement, natural"
-
-FILM LOOK — choose based on context:
-- If this is a photoshoot/editorial context: "clean sharp colors, natural contrast, editorial quality, no grain, crisp details"
-- If this is a casual everyday moment: "subtle digital noise, natural colors, no color grading, no filters, no yellow tint, no vintage look"
-- NEVER use: yellow tint, warm filter, Kodak Portra color cast, oversaturated warm tones, vintage film look, heavy grain
-
-REALISM RULES:
-- Colors must be natural and accurate — no artificial warming or cooling
-- Skin tones must be realistic — no orange, no yellow cast
-- If outdoor daylight: cool natural light, accurate white balance
-- If indoor: realistic indoor lighting, no fake warmth
-- The photo should look like it came straight from an iPhone camera roll — unedited, no VSCO, no Lightroom presets
-
-${arcArchetype ? `
-ARC ARCHETYPE VISUAL RULES — this is the most important styling directive:
-
-${arcArchetype === "trial" ? `
-🔥 ИСПЫТАНИЕ — Visual language of struggle and triumph:
-- Camera: handheld, slightly shaky, like someone is running to catch the moment
-- Light: harsh, directional, no softness — sunlight cutting through, dramatic shadows
-- Movement: always mid-action, hair flying, clothes in motion, sweat visible
-- Expression: jaw set, eyes fierce or tearful with determination, never relaxed
-- Color: high contrast, slightly desaturated except for one hot color (red, orange)
-- Imperfections: motion blur on edges, dust particles, lens flare from direct sun
-- Composition: diagonal lines, subject slightly off-center, tension in the frame` : ""}
-
-${arcArchetype === "depth" ? `
-🌊 ПОГРУЖЕНИЕ — Visual language of introspection:
-- Camera: still, deliberate, as if time has stopped
-- Light: soft diffused window light, no harsh shadows, misty or overcast outdoor
-- Movement: none — she is completely still, or one slow gesture (hand to face, eyes closing)
-- Expression: eyes downcast or gazing far away, slight frown, processing something
-- Color: muted, desaturated, cool blues and grays, like a rainy day filter
-- Imperfections: slight focus softness, minimal grain, quiet frame
-- Composition: lots of negative space around her, she is small in the frame` : ""}
-
-${arcArchetype === "break" ? `
-💥 РАЗРЫВ — Visual language of rupture and release:
-- Camera: wide angle slightly distorted, or extreme close-up — no middle ground
-- Light: harsh overhead or backlight creating silhouette, or very low moody light
-- Movement: collapse, turning away, head in hands, or frozen mid-breakdown
-- Expression: raw emotion — tears, open mouth, eyes red, completely unguarded
-- Color: desaturated almost black and white, or very cold blue tones
-- Imperfections: heavy grain, underexposed, shadows eating the frame
-- Composition: broken, asymmetric, something feels wrong about the framing intentionally` : ""}
-
-${arcArchetype === "discovery" ? `
-✨ ОТКРЫТИЕ — Visual language of wonder and awakening:
-- Camera: wide, exploratory, like seeing everything for the first time
-- Light: golden hour, magic hour, light coming from unexpected angles, lens flare welcome
-- Movement: turning toward something, hand reaching out, face lifting up
-- Expression: wide eyes, half-smile of surprise, genuine delight, mouth slightly open
-- Color: warm golden tones, rich and saturated but natural, glowing
-- Imperfections: beautiful lens flare, slight overexposure on highlights, dreamy edges
-- Composition: she is discovering something in the frame — her gaze leads the eye` : ""}
-
-${arcArchetype === "masquerade" ? `
-🎭 МАСКАРАД — Visual language of play and identity:
-- Camera: unusual angles — from below, from above, through objects, reflections
-- Light: mixed artificial and natural, neon, interesting color casts, theatrical
-- Movement: performative, aware of the camera but playing with it
-- Expression: knowing smirk, one eyebrow raised, caught between masks
-- Color: unexpected color combinations, pops of saturated color
-- Imperfections: reflection in glass, double exposure feel, something slightly surreal
-- Composition: mirrors, windows, shadows that create a second version of her` : ""}
-
-${arcArchetype === "chaos" ? `
-🌀 ОТРЫВ — Visual language of pure unhinged energy:
-- Camera: shaking, tilted 15-20 degrees, like thrown into the moment
-- Light: night, neon, strobe-like flash, unpredictable mixed sources
-- Movement: maximum — spinning, running, jumping, blurred limbs everywhere
-- Expression: mouth open laughing or screaming, eyes wild, completely gone
-- Color: oversaturated, blown highlights, colors bleeding into each other
-- Imperfections: heavy motion blur, ISO noise cranked up, accidental double exposure
-- Composition: rules completely broken — subject half out of frame, horizon tilted, chaos` : ""}
+SHOT NUMBER: ${(shotIndex||0)+1} of ${totalShots||3}
+OUTFIT: ${outfitDescription || "match the activity"}
+ARCHETYPE: ${arcArchetype || "lifestyle"}
 
 ${arcArchetype === "adventure" ? `
-🚀 ПРИКЛЮЧЕНЧЕСКИЙ РЕЖИМ — Visual language of pure adrenaline:
-- Camera: extreme angles only — fisheye distortion, dutch tilt 25-35 degrees, from below looking up
-- ALWAYS mid-action: jumping, running, spinning, climbing, hanging — never standing still
-- Motion blur on background and limbs, face stays sharp
-- Unexpected locations: rooftops, moving vehicles, market crowds, cliffs, doorways, fire escapes
-- Expression: mouth open laughing or screaming, eyes wild, completely unhinged joy, zero self-consciousness
-- Someone in background always looks shocked at what she's doing
-- Multiple light sources clashing: neon + sunlight + shadow all in one frame
-- Imperfections: tilted horizon, slight finger in frame, accidental flare, blown highlights
-- Color: high contrast, punchy, oversaturated in a real-life way — not filtered
-- Format 4:5 but composition feels like it wants to burst out of the frame
-- NEVER: standing posed, calm expression, empty background, clean composition` : ""}
-` : ""}
+ADVENTURE MODE — write a prompt following THIS EXACT STRUCTURE:
 
-ALWAYS: natural light, not posed, real skin texture, imperfect composition, RAW look
-NEVER: studio lighting, perfect pose, AI-smooth skin, glamour
+1. REFERENCE INSTRUCTION (always first):
+"Using reference photo, preserve exact face features, copper red curly hair, blue eyes, freckles."
 
-Using reference photo — preserve exact face features, copper red curly hair, blue eyes, freckles. Format 4:5.
+2. HOW THE PHONE GOT THERE (make it specific and creative):
+Examples: "shot on iPhone — phone taped with electrical tape to zipline carabiner facing forward", "phone held between teeth of a local fisherman sitting on adjacent rock", "phone fell from hands and is floating face-up on water surface", "phone propped against a coconut on the beach tilted at 45 degrees", "phone handed to a monkey who ran off and accidentally shot this"
+Write YOUR version matching the day's activity.
 
-OUTFIT LOCK — use EXACTLY this in every shot, do not deviate:
-"${outfitDescription || "same consistent outfit throughout all shots"}"
-This outfit must be identical across all photos in this series.
+3. CAMERA ANGLE (specific degrees and position):
+Examples: "from directly below looking up at 90 degrees", "side angle 30 degrees upward", "strict bird's eye straight down", "from water surface level, horizontal", "from inside the cave looking toward the bright exit"
+Write the angle that creates the most dramatic shot for THIS activity.
 
-ACTIVITY CHECK: If the narrative involves water/surfing/swimming → the outfit MUST be a swimsuit, wetsuit, or bikini. No regular clothes, no sneakers near water. If hiking → hiking boots and outdoor gear. Match the outfit to the physical activity described.
-${outfitRefImage ? "REFERENCE OUTFIT IMAGE PROVIDED — use the exact clothing from the outfit reference image (image included in imageUrls). Replicate the exact colors, cut, fabric, and style of this outfit on the character." : ""}
+4. THE SPLIT-SECOND ACTION:
+Describe the EXACT millisecond captured. She must be mid-action, never static.
+Examples: "one foot still on rock, other already in air, body at point of no return", "whale shark filling entire upper frame, her eyes through mask plate showing pure shock", "falling horizontally above camera, paddle in one hand, board already gone sideways"
+Include: what she's doing, her exact expression, what's happening around her.
 
-Write ONLY the final prompt in English. No analysis, no explanations.`
+5. SKIN AND PHYSICAL REALISM (always include):
+"Skin alive: [specific details matching days of travel — pores, tan lines, specific mark from today's activity, sweat, salt water, dust, mascara situation, hair state from activity]"
+
+6. LIGHTING (always natural only):
+"Natural light only — [specific description: early morning Krabi sun hitting from the side creating long shadows on rock, underwater rays filtering from surface, single bare bulb above boxing ring, neon signs only, last rays of sunset through palm leaves]"
+"No flash. Never."
+
+7. TECHNICAL IMPERFECTIONS (make them specific):
+"[Specific artifact visible: electrical tape in corner of frame, grain from night ISO, motion blur on everything except face, horizon tilted, chromatic aberration underwater, phone screen reflection visible, water drops on lens, bat blurred in motion in upper corner]"
+
+8. FORMAT: based on activity — 4:5 for portrait moments, 9:16 for vertical action, 16:9 for horizontal scenes
+
+LOCATION LOCK: Every visual detail must scream ${arcContext?.includes("Таиланд") || arcContext?.includes("Thailand") ? "THAILAND — limestone cliffs, emerald water, tuk-tuks, thai script signs, local thai people, tropical vegetation, thai architecture" : arcContext?.includes("Япон") || arcContext?.includes("Japan") ? "JAPAN — torii gates, japanese street signs, locals in traditional clothes, cherry blossoms or urban neon" : (city || personaCity || "the specific location from the narrative")}
+
+Write ONLY the final prompt in English. Be as specific as these examples. No explanations.
+` : `
+Write a photorealistic iPhone photo prompt following this structure:
+1. "Using reference photo, preserve exact face features, copper red curly hair, blue eyes, freckles."
+2. How/where phone is positioned (creative, specific)
+3. Exact camera angle with degrees
+4. Split-second action description
+5. Skin realism details
+6. Natural lighting only (specific)
+7. Technical imperfections
+8. Format 4:5
+
+Location must be: ${city || personaCity || persona?.city || "extract from narrative"}
+Activity/outfit must match: ${narrativeBit || postText}
+Shot ${(shotIndex||0)+1} of ${totalShots||3} — vary the angle and moment from other shots.
+
+Write ONLY the prompt in English.
+`}`
         }]
       })
   });
