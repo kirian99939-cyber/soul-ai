@@ -2,6 +2,11 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   if(req.method === "OPTIONS") return res.status(200).end();
 
+  try {
+    const bodyStr = JSON.stringify(req.body);
+    console.log("Body size:", Math.round(bodyStr.length/1024), "KB");
+  } catch(e) {}
+
   // Проверяем размер тела запроса
   const bodySize = JSON.stringify(req.body).length;
   console.log("Request body size:", Math.round(bodySize/1024), "KB");
@@ -11,6 +16,7 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: "Request too large. Reduce number of outfit reference images." });
   }
 
+  console.log("Handler started, key exists:", !!process.env.NANOBANANA_API_KEY);
   const key = process.env.NANOBANANA_API_KEY;
   const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, outfitImages, arcContext, photoIdea } = req.body || {};
 
