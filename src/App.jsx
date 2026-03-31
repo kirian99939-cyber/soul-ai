@@ -3956,17 +3956,7 @@ export default function PersonaOS() {
           setPersonas(personasWithPhotos);
           setSelId(personasWithPhotos[0].id);
         } else {
-          // Seed with Lera
-          const lera = {
-            id:uid(), name:"Лера Вельская", handle:"lera.velskaya", brand:"The Legend",
-            city:"Стамбул (из Екатеринбурга)", age:"30", bio:"Руководитель клиентского сервиса. Год назад переехала в путешествие. 30 стран — 30 историй.",
-            appearance:{hair:"#C45518",eyes:"#7AAAD4",freckles:true,skin:"#F5D0B0",hairType:"curly"},
-            soul:LERA_SOUL, state:{...ST_DEF},
-            niches:["fashion","travel","self"],formats:["story","hot","reply","vuln"],
-            context:"Стамбул, день 47. Через 3 дня — Грузия. Вчера звонила мама.",
-            createdAt:now(),
-          };
-          setPersonas([lera]); setSelId(lera.id);
+          console.log("No personas in Supabase yet");
         }
         if(savedContent?.length) setContent(savedContent);
         // Load photos
