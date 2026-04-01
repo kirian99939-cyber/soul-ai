@@ -3975,7 +3975,7 @@ export default function PersonaOS() {
           Promise.race([loadData("os_content"),  new Promise(r => setTimeout(()=>r(null), 5000))]),
         ]);
 
-        console.log("Personas result:", pr.status, !!pr.value);
+        console.log("PR status:", pr.status, "PR reason:", pr.reason, "PR value:", !!pr.value);
         console.log("Content result:", cr.status, !!cr.value);
 
         const savedPersonas = pr.status==="fulfilled"&&pr.value ? pr.value : null;
