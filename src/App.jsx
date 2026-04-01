@@ -1,5 +1,16 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { supabase, loadData, saveData, saveReferencePhotos, loadReferencePhotos } from "./supabase.js";
+import {
+  buildSoulPrompt,
+  buildPlanetsPrompt,
+  buildNatalChartPrompt,
+  buildAstroProfilePrompt,
+  buildTovPrompt,
+  buildCommentsPrompt,
+  buildCityPrompt,
+  buildOutfitPrompt,
+  buildAdventurePhotoIdeasPrompt,
+} from "./prompts.js";
 
 // ═══════════════════════════════════════════════════════
 //  SOUL AI v3  |  Multi-Soul Content Engine
@@ -944,34 +955,7 @@ function SoulEditor({persona, onChange}) {
                 body:JSON.stringify({
                   model:"claude-sonnet-4-20250514",
                   max_tokens:2000,
-                  messages:[{role:"user",content:`Создай детальную душу для AI-блогера.
-
-ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет, ${persona.city}
-БИО: ${persona.bio||""}
-
-Верни ТОЛЬКО валидный JSON объект с полями:
-{
-  "psycho": {"mbti": "", "temperament": "", "enneagram": "", "attachment": ""},
-  "archetypes": "",
-  "manifesto": "",
-  "audience": "",
-  "contentStrategy": "",
-  "visualCode": "",
-  "contentCode": "",
-  "job": "",
-  "hobbies": [],
-  "lifeGoal": "",
-  "dailyRhythm": "",
-  "currentObsession": "",
-  "style": "",
-  "taboo": "",
-  "catchphrases": "",
-  "wounds": [{"text":"","heal":50}],
-  "fears": [{"text":"","pwr":70}],
-  "voices": [{"who":"","says":"","pwr":50}],
-  "obsessive": [{"thought":"","counter":""}],
-  "goals": [{"text":"","pct":20}]
-}`}]
+                  messages:[{role:"user",content:buildSoulPrompt(persona)}]
                 })
               });
               const d = await r.json();
@@ -1068,25 +1052,7 @@ function SoulEditor({persona, onChange}) {
               body:JSON.stringify({
                 model:"claude-sonnet-4-20250514",
                 max_tokens:400,
-                messages:[{role:"user",content:`Ты астролог. Рассчитай положения планет для натальной карты.
-
-ДАТА РОЖДЕНИЯ: ${soul.birthDate}
-ВРЕМЯ РОЖДЕНИЯ: ${soul.birthTime||"неизвестно"}
-МЕСТО РОЖДЕНИЯ: ${soul.birthPlace||"неизвестно"}
-
-Верни ТОЛЬКО JSON без пояснений:
-{
-  "sun": "знак зодиака",
-  "moon": "знак зодиака",
-  "rising": "знак зодиака (если нет времени — напиши null)",
-  "venus": "знак зодиака",
-  "mars": "знак зодиака",
-  "mercury": "знак зодиака",
-  "jupiter": "знак зодиака",
-  "saturn": "знак зодиака"
-}
-
-Используй русские названия знаков. Если время неизвестно — rising: null.`}]
+                messages:[{role:"user",content:buildPlanetsPrompt(soul)}]
               })
             });
             const d = await r.json();
@@ -1100,20 +1066,7 @@ function SoulEditor({persona, onChange}) {
               body:JSON.stringify({
                 model:"claude-sonnet-4-20250514",
                 max_tokens:600,
-                messages:[{role:"user",content:`Ты астролог-психолог. Напиши живое поэтичное описание натальной карты для персонажа.
-
-ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
-СОЛНЦЕ: ${planets.sun}
-ЛУНА: ${planets.moon||"неизвестно"}
-АСЦЕНДЕНТ: ${planets.rising||"неизвестно"}
-ВЕНЕРА: ${planets.venus||""}
-МАРС: ${planets.mars||""}
-МЕРКУРИЙ: ${planets.mercury||""}
-ЮПИТЕР: ${planets.jupiter||""}
-САТУРН: ${planets.saturn||""}
-МЕСТО РОЖДЕНИЯ: ${soul.birthPlace||"неизвестно"}
-
-Напиши описание на русском — 5-7 предложений. Стиль: психологично, поэтично, без банальщины. Как будто ты видишь душу человека через карту. Начни с Солнца, потом Луна, потом ключевые аспекты личности из других планет.`}]
+                messages:[{role:"user",content:buildNatalChartPrompt(persona, soul, planets)}]
               })
             });
             const natalData = await natalRes.json();
@@ -1205,32 +1158,7 @@ function SoulEditor({persona, onChange}) {
               body:JSON.stringify({
                 model:"claude-sonnet-4-20250514",
                 max_tokens:800,
-                messages:[{role:"user",content:`Ты астролог-психолог. Создай краткий астрологический профиль персонажа для использования в контент-стратегии.
-
-ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
-ДАТА РОЖДЕНИЯ: ${soul.birthDate}
-СОЛНЦЕ: ${soul.zodiac?.sun||""}
-ЛУНА: ${soul.zodiac?.moon||""}
-АСЦЕНДЕНТ: ${soul.zodiac?.rising||""}
-ВЕНЕРА: ${soul.zodiac?.venus||""}
-МАРС: ${soul.zodiac?.mars||""}
-${soul.natalChart ? `НАТАЛЬНАЯ КАРТА: ${soul.natalChart}` : ""}
-
-Создай профиль:
-
-**КЛЮЧЕВЫЕ ТЕМЫ ЖИЗНИ:**
-(3-4 главные темы которые проходят через всю жизнь)
-
-**КАК ПРОЯВЛЯЕТСЯ В КОНТЕНТЕ:**
-(как астрология влияет на то о чём она пишет и как)
-
-**ТЕНЕВЫЕ СТОРОНЫ:**
-(что мешает, внутренние конфликты из карты)
-
-**АСТРО-ФРАЗЫ ДНК:**
-(5 фраз которые могла бы говорить именно этот астротип)
-
-Пиши конкретно, психологично, без банальщины.`}]
+                messages:[{role:"user",content:buildAstroProfilePrompt(persona, soul)}]
               })
             });
             const d = await r.json();
@@ -1404,49 +1332,7 @@ ${soul.natalChart ? `НАТАЛЬНАЯ КАРТА: ${soul.natalChart}` : ""}
               body:JSON.stringify({
                 model:"claude-sonnet-4-20250514",
                 max_tokens:1500,
-                messages:[{role:"user",content:`Ты — редактор и копирайтер. Проанализируй эти посты и создай детальную карточку Tone of Voice — адаптированную для женского персонажа ${persona?.name || "персонажа"}.
-
-ВАЖНО: Автор постов может быть мужчиной, но карточка TOV должна описывать как ЖЕНЩИНА может писать в похожем стиле. Сохрани энергию, иронию, прямоту и характерные приёмы — но адаптируй под женский голос. Убери специфически мужские обороты, замени на женские эквиваленты той же силы.
-
-ПОСТЫ:
-${soul.tovSamples}
-
-Создай карточку TOV в следующем формате (пиши по-русски, конкретно и практично):
-
-**РИТМ И СТРУКТУРА:**
-- Длина предложений (короткие/длинные/смешанные)
-- Абзацы (как разбивает текст)
-- Любимые структуры (вопрос-ответ, список, история и т.д.)
-
-**ЛЕКСИКА:**
-- Характерные слова и выражения (приведи 10-15 примеров)
-- Регистр (формальный/разговорный/сленг)
-- Отношение к мату/грубым словам
-- Чего никогда не говорит
-
-**ЭМОЦИОНАЛЬНЫЙ ДИАПАЗОН:**
-- Основные эмоции в текстах
-- Как выражает радость/злость/иронию
-- Степень уязвимости и открытости
-
-**ХАРАКТЕРНЫЕ ПРИЁМЫ:**
-- Риторические вопросы (как использует)
-- Самоирония (есть/нет/как)
-- Обращение к читателю (ты/вы/ребят/друг и т.д.)
-- Юмор (какой тип, как дозирует)
-
-**ЗАПРЕЩЁННЫЕ ТЕМЫ И СЛОВА:**
-- Что автор никогда не напишет
-- Какие слова/обороты чужды этому голосу
-
-**ПРИМЕРЫ ФРАЗ-ДНК:**
-Приведи 5-7 коротких фраз которые максимально передают голос автора
-
-**ИНСТРУКЦИЯ ДЛЯ КОПИРАЙТЕРА:**
-В 3-4 предложениях — как писать В СТИЛЕ этого автора, не копируя.
-
-**ЖЕНСКАЯ АДАПТАЦИЯ:**
-Как этот голос звучит у женщины — что остаётся, что меняется, какие женские обороты заменяют мужские при той же силе и прямоте.`}]
+                messages:[{role:"user",content:buildTovPrompt(persona, soul.tovSamples)}]
               })
             });
             const d = await r.json();
@@ -1859,7 +1745,7 @@ function StudioTab({persona, onSave, onSavePhoto}) {
     try {
       const r = await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:`Ты — ${persona.name}. Пост: "${txt}"\n\n4 комментария разных людей + ответ ${persona.name.split(" ")[0]} на каждый (честный, провокационный).\nJSON: [{"comment":"...","user":"...","reply":"..."}]`}]}),
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:buildCommentsPrompt(persona, txt)}]}),
       });
       const d = await r.json();
       setReplies(JSON.parse((d.content?.map(i=>i.text||"").join("")||"").replace(/```json|```/g,"").trim()));
@@ -1886,7 +1772,7 @@ function StudioTab({persona, onSave, onSavePhoto}) {
             max_tokens: 30,
             messages: [{
               role: "user",
-              content: `Найди название города или страны в тексте. Только название, без пояснений. Если нет — ответь NONE.\n\nТекст: "${postText}"`
+              content: buildCityPrompt(postText)
             }]
           })
         });
@@ -2329,23 +2215,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
             max_tokens: 150,
             messages: [{
               role: "user",
-              content: `Опиши одежду и образ для фотосессии одного дня. Одно предложение на английском — максимально конкретно.
-
-КОНТЕКСТ ДНЯ: ${dayTitle || ""}
-НАРРАТИВ: ${narrativeBit || ""}
-ПОСТ: "${postText}"
-СЕЗОН: ${getSeasonVisual()}
-АРХЕТИП: ${arcArchetype || "обычный день"}
-
-ВАЖНО: Одежда должна ТОЧНО соответствовать активности!
-- Серфинг/плавание/водный спорт → купальник или гидрокостюм, босиком или в пляжных тапках
-- Поход/горы/природа → треккинговая одежда, ботинки
-- Йога/медитация → спортивная одежда, без обуви
-- Ресторан/вечеринка → нарядная одежда
-- Обычная прогулка → повседневная одежда
-- Фотосессия → стильный образ под контекст
-
-Только описание образа, без лишних слов. Начни с "wearing".`
+              content: buildOutfitPrompt(dayTitle, narrativeBit, postText, getSeasonVisual(), arcArchetype)
             }]
           })
         });
@@ -2556,32 +2426,7 @@ ${arcArchetype==="adventure" ? `
           body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
             max_tokens: 2000,
-            messages: [{role:"user", content:`Ты — безумный кинематографический фотограф. Придумай ${days} диких идей для фото для приключенческой арки.
-
-ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
-ТОЧКА А: ${ptA}
-ТОЧКА Б: ${ptB}
-ЛОКАЦИЯ: ${persona.city}
-СЕЗОН: ${getSeason()}
-
-Для каждого дня придумай ОДНУ безумную идею фото — конкретный момент, угол камеры, где находится телефон, что происходит в эту секунду.
-
-Вдохновляйся этими примерами:
-- "Телефон зажат в зубах местного рыбака — она в точке невозврата прыжка со скалы над изумрудной водой"
-- "Телефон скотчем примотан к зиплайну — снимает вперёд, она несётся с криком, джунгли размыты"
-- "Телефон упал в воду и плавает вверх объективом — она падает с SUP-борда прямо сверху"
-- "Телефон воткнут в песок под 45° — снимает снизу вверх на танцующую в неоновом свете"
-- "Телефон лежит на носу каяка — она лежит на спине протискиваясь в морскую пещеру"
-
-Верни ТОЛЬКО JSON:
-[
-  {
-    "day": 1,
-    "photoIdea": "конкретное описание кадра — где камера, что происходит, угол, момент",
-    "activity": "что она делает (прыжок/серфинг/бокс/etc)",
-    "location": "конкретное место (пляж Рейлей/джунгли Чиангмай/etc)"
-  }
-]`}]
+            messages: [{role:"user", content:buildAdventurePhotoIdeasPrompt(persona, days, ptA, ptB, getSeason())}]
           })
         });
         const photoIdeasData = await photoIdeasRes.json();
@@ -3917,43 +3762,7 @@ function CreateModal({onClose, onCreate}) {
                       body:JSON.stringify({
                         model:"claude-sonnet-4-20250514",
                         max_tokens:2000,
-                        messages:[{role:"user",content:`Ты — психолог и архетипный аналитик. Создай глубокий психологический профиль для AI-блогера.
-
-ДАННЫЕ:
-Имя: ${form.name}
-Возраст: ${form.age}
-Город: ${form.city}
-Бренд: ${form.brand}
-Био: ${form.bio}
-Дата рождения: ${form.birthDate||"неизвестно"}
-Место рождения: ${form.birthPlace||"неизвестно"}
-
-Создай профиль в формате JSON (только JSON, без пояснений):
-{
-  "manifesto": "ключевая мысль аккаунта — одна фраза которая всё объясняет",
-  "audience": "кто её читает — конкретно",
-  "contentStrategy": "стратегия контента",
-  "visualCode": "визуальный стиль фото",
-  "contentCode": "формула контента",
-  "archetypes": "2-3 архетипа через +",
-  "mbti": "тип + название",
-  "temperament": "темперамент",
-  "enneagram": "тип + крыло + название",
-  "attachment": "тип привязанности",
-  "job": "работа/занятие",
-  "hobbies": ["увлечение1", "увлечение2", "увлечение3"],
-  "lifeGoal": "цель жизни одной фразой",
-  "dailyRhythm": "ритм дня",
-  "currentObsession": "текущая одержимость",
-  "style": "стиль одежды",
-  "taboo": "что никогда не пишет",
-  "catchphrases": "характерные фразы через запятую",
-  "wounds": [{"text":"рана","heal":30}],
-  "fears": [{"text":"страх","pwr":60}],
-  "voices": [{"who":"внутренний критик","says":"фраза"}],
-  "obsessions": [{"text":"навязчивая мысль"}],
-  "aspirations": [{"text":"стремление"}]
-}`}]
+                        messages:[{role:"user",content:buildSoulPrompt(form)}]
                       })
                     });
                     const d = await r.json();
