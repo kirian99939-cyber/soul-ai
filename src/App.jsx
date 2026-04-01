@@ -3999,7 +3999,15 @@ export default function PersonaOS() {
           setPersonas(personasWithPhotos);
           setSelId(personasWithPhotos[0].id);
         } else {
-          console.log("No personas in Supabase yet");
+          const lera = {
+            id:"8vxk75qt", name:"Лера Вельская", handle:"lera.velskaya", brand:"The Legend",
+            city:"Стамбул (из Екатеринбурга)", age:"30", bio:"Жадная до жизни — и не извиняюсь за это.",
+            appearance:{hair:"#C45518",eyes:"#7AAAD4",freckles:true,skin:"#F5D0B0",hairType:"curly"},
+            soul:LERA_SOUL, state:{...ST_DEF},
+            niches:["fashion","travel","self"], formats:["story","hot","reply","vuln"],
+            createdAt:now(),
+          };
+          setPersonas([lera]); setSelId(lera.id);
         }
         if(savedContent?.length) setContent(savedContent);
         // Load photos
