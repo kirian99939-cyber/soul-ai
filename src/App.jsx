@@ -4018,11 +4018,11 @@ export default function PersonaOS() {
   // ── SAVE ─────────────────────────────────────────────
   useEffect(()=>{
     if(!loaded) return;
-    saveData("os_personas", personas).catch(()=>{});
+    if(personas.length > 0) saveData("os_personas", personas).catch(()=>{});
   },[personas,loaded]);
   useEffect(()=>{
     if(!loaded) return;
-    saveData("os_content", content).catch(()=>{});
+    if(content.length > 0) saveData("os_content", content).catch(()=>{});
   },[content,loaded]);
 
   // ── PERSONA CRUD ──────────────────────────────────────
