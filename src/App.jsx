@@ -41,6 +41,43 @@ const card = (extra={}) => ({
 });
 const INV = new Set(["anxiety","loneliness","homesickness","moneyAnxiety","spendingImpulse","innerCriticVolume","controlUrge"]);
 
+// ── TOAST SYSTEM ────────────────────────────────────────
+let _toastFn = null;
+const toast = {
+  success: (msg) => _toastFn?.({msg, type:"success"}),
+  error: (msg) => _toastFn?.({msg, type:"error"}),
+  info: (msg) => _toastFn?.({msg, type:"info"}),
+};
+
+function ToastContainer() {
+  const [toasts, setToasts] = useState([]);
+  useEffect(() => {
+    _toastFn = ({msg, type}) => {
+      const id = Math.random().toString(36).slice(2,10);
+      setToasts(p => [...p, {id, msg, type}]);
+      setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 3500);
+    };
+    return () => { _toastFn = null; };
+  }, []);
+  if(!toasts.length) return null;
+  return (
+    <div style={{position:"fixed",bottom:24,right:24,zIndex:999,display:"flex",flexDirection:"column",gap:8}}>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          padding:"12px 18px",borderRadius:12,fontFamily:"'DM Sans',sans-serif",fontSize:13,
+          background: t.type==="success"?"rgba(128,255,204,0.15)":t.type==="error"?"rgba(255,96,96,0.15)":"rgba(168,192,255,0.12)",
+          border: `1px solid ${t.type==="success"?"rgba(128,255,204,0.3)":t.type==="error"?"rgba(255,96,96,0.3)":"rgba(168,192,255,0.2)"}`,
+          color: t.type==="success"?"#80FFCC":t.type==="error"?"#FF6060":"#A8C0FF",
+          backdropFilter:"blur(20px)",boxShadow:"0 4px 24px rgba(0,0,0,0.4)",
+          animation:"fadeUp .2s ease",maxWidth:320,
+        }}>
+          {t.type==="success"?"✓ ":t.type==="error"?"✕ ":"● "}{t.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── UTILS ───────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2,10);
 const now = () => new Date().toISOString();
@@ -2351,7 +2388,7 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
         if(data.imageUrl) {
           results_[i] = data.imageUrl;
           resolved++;
-          if(resolved === 1) setGenArcPhoto(prev => ({...prev, [key]: false}));
+          if(resolved === 1) { setGenArcPhoto(prev => ({...prev, [key]: false})); toast.success("Фото готово!"); }
           setArcPhotos(prev => {
             const updated = { ...prev, [key]: [...(prev[key] || []), data.imageUrl] };
             if(onSavePhoto) onSavePhoto({ imageUrl: data.imageUrl, postText, context: "arc" });
@@ -3158,7 +3195,21 @@ ${photoIdeas.map(p => `День ${p.day}: ${p.photoIdea} (активность: 
                       color:genArcPhoto[photoKey(expandedArc,selDay)]?"#4A5570":"#FFD580",
                       background:"rgba(255,213,128,0.08)",border:"1px solid rgba(255,213,128,0.2)",
                       borderRadius:8,padding:"8px",cursor:genArcPhoto[photoKey(expandedArc,selDay)]?"wait":"pointer"}}>
-                    {genArcPhoto[photoKey(expandedArc,selDay)]?"⟳ Генерирую фото...":"📸 Сгенерировать фото к дню"}
+                    {genArcPhoto[photoKey(expandedArc,selDay)] ? (
+                      <div style={{width:"100%"}}>
+                        <div style={{fontSize:10,color:"#FFD580",fontWeight:600,marginBottom:6,textAlign:"center"}}>
+                          ⟳ Генерирую... {arcPhotos[photoKey(expandedArc,selDay)]?.length || 0} из {arcPhotoCount} готово
+                        </div>
+                        <div style={{background:"rgba(255,255,255,0.05)",borderRadius:4,height:4,overflow:"hidden"}}>
+                          <div style={{
+                            height:"100%",borderRadius:4,
+                            background:"linear-gradient(90deg,#FFD580,#FF9500)",
+                            width:`${Math.round(((arcPhotos[photoKey(expandedArc,selDay)]?.length||0)/arcPhotoCount)*100)}%`,
+                            transition:"width .5s ease"
+                          }}/>
+                        </div>
+                      </div>
+                    ) : "📸 Сгенерировать фото к дню"}
                   </button>
                 </div>
 
@@ -3606,9 +3657,11 @@ function LibraryTab({personaId, content, onStatusChange, onDelete}) {
       if(d.success || d.mock) {
         onStatusChange(item.id, "published");
         if(d.url) setPublishedUrls(prev => ({ ...prev, [item.id]: d.url }));
+        toast.success("Пост опубликован в Threads!");
       }
     } catch(e) {
       console.error("Publish error:", e);
+      toast.error("Ошибка публикации");
     }
     setPublishing(null);
   };
@@ -4107,11 +4160,11 @@ export default function PersonaOS() {
   // ── SAVE ─────────────────────────────────────────────
   useEffect(()=>{
     if(!loaded) return;
-    if(personas.length > 0) saveData("os_personas", personas).catch(()=>{});
+    if(personas.length > 0) saveData("os_personas", personas).catch(()=>{ toast.error("Ошибка сохранения"); });
   },[personas,loaded]);
   useEffect(()=>{
     if(!loaded) return;
-    if(content.length > 0) saveData("os_content", content).catch(()=>{});
+    if(content.length > 0) saveData("os_content", content).catch(()=>{ toast.error("Ошибка сохранения"); });
   },[content,loaded]);
 
   // ── PERSONA CRUD ──────────────────────────────────────
@@ -4145,11 +4198,12 @@ export default function PersonaOS() {
     });
     setContent(prev=>prev.filter(c=>c.personaId!==id));
     setDelConfirm(null);
+    toast.info("Персона удалена");
   };
 
   // ── CONTENT CRUD ─────────────────────────────────────
-  const saveContent = item => setContent(prev=>[item,...prev]);
-  const updateStatus = (id,status,scheduledAt) => setContent(prev=>prev.map(c=>c.id===id?{...c,status,...(scheduledAt?{scheduledAt}:{})}:c));
+  const saveContent = item => { setContent(prev=>[item,...prev]); toast.success("Сохранено в библиотеку"); };
+  const updateStatus = (id,status,scheduledAt) => { setContent(prev=>prev.map(c=>c.id===id?{...c,status,...(scheduledAt?{scheduledAt}:{})}:c)); if(status==="published") toast.success("Опубликовано в Threads ✓"); };
   const deleteContent = id => setContent(prev=>prev.filter(c=>c.id!==id));
 
   const sel = personas.find(p=>p.id===selId);
@@ -4190,6 +4244,7 @@ export default function PersonaOS() {
         @keyframes twinkle  {0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
         @keyframes aurapulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.8;transform:scale(1.08)}}
         @keyframes dotPulse {0%,80%,100%{transform:scale(.4);opacity:.2}40%{transform:scale(1);opacity:1}}
+        @keyframes pulse {0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
         @keyframes nebulaDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(8px,-12px) scale(1.04)}100%{transform:translate(0,0) scale(1)}}
         @keyframes starPulse {0%,100%{filter:drop-shadow(0 0 3px currentColor)}50%{filter:drop-shadow(0 0 10px currentColor)}}
         ::-webkit-scrollbar{width:3px}
@@ -4382,6 +4437,7 @@ export default function PersonaOS() {
       </div>
 
       {creating && <CreateModal onClose={()=>setCreating(false)} onCreate={createPersona}/>}
+      <ToastContainer />
       {delConfirm && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(16px)"}}>
           <div style={{background:"rgba(8,12,28,0.96)",backdropFilter:"blur(32px)",border:"1px solid rgba(255,96,96,0.15)",borderRadius:20,padding:"32px 36px",maxWidth:380,textAlign:"center",boxShadow:"0 32px 80px rgba(0,0,0,0.7),0 0 40px rgba(255,96,96,0.08)"}}>
