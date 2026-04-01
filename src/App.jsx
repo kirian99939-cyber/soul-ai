@@ -3104,11 +3104,13 @@ ${photoIdeas.map(p => `День ${p.day}: ${p.photoIdea} (активность: 
                                 .upload(fileName, blob, {contentType:"image/jpeg", upsert:true});
                               if(!error && data) {
                                 const { data: urlData } = supabase.storage.from("persona-photos").getPublicUrl(fileName);
+                                console.log("Outfit uploaded to Supabase:", urlData.publicUrl);
                                 return urlData.publicUrl;
                               }
                             } catch(e) {
                               console.error("Upload outfit failed:", e);
                             }
+                            console.log("Outfit fallback to base64, length:", resized.length);
                             return resized; // fallback to base64
                           }));
                           setArcDayOutfitRef(prev=>({...prev,[dayKey]:[...existing,...newImages]}));
