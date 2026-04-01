@@ -3010,7 +3010,28 @@ ${photoIdeas.map(p => `День ${p.day}: ${p.photoIdea} (активность: 
                             };
                             reader.readAsDataURL(file);
                           });
-                          const newImages = await Promise.all(files.map(resizeImage));
+                          const newImages = await Promise.all(files.map(async file => {
+                            const resized = await resizeImage(file);
+                            // Загружаем в Supabase Storage
+                            try {
+                              const base64Data = resized.split(",")[1];
+                              const byteCharacters = atob(base64Data);
+                              const byteArray = new Uint8Array(byteCharacters.length);
+                              for(let i=0; i<byteCharacters.length; i++) byteArray[i] = byteCharacters.charCodeAt(i);
+                              const blob = new Blob([byteArray], {type:"image/jpeg"});
+                              const fileName = `outfit-refs/${expandedArc}_${selDay}_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+                              const { data, error } = await supabase.storage
+                                .from("persona-photos")
+                                .upload(fileName, blob, {contentType:"image/jpeg", upsert:true});
+                              if(!error && data) {
+                                const { data: urlData } = supabase.storage.from("persona-photos").getPublicUrl(fileName);
+                                return urlData.publicUrl;
+                              }
+                            } catch(e) {
+                              console.error("Upload outfit failed:", e);
+                            }
+                            return resized; // fallback to base64
+                          }));
                           setArcDayOutfitRef(prev=>({...prev,[dayKey]:[...existing,...newImages]}));
                           e.target.value = "";
                         }}
