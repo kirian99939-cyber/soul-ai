@@ -3971,7 +3971,7 @@ export default function PersonaOS() {
       console.log("=== Loading personas ===");
       try {
         const [pr,cr] = await Promise.allSettled([
-          Promise.race([loadData("os_personas"), new Promise(r => setTimeout(()=>r(null), 5000))]),
+          loadData("os_personas").then(d => { console.log("os_personas loaded:", !!d, d ? JSON.stringify(d).length + " bytes" : "null"); return d; }).catch(e => { console.error("os_personas ERROR:", e); return null; }),
           Promise.race([loadData("os_content"),  new Promise(r => setTimeout(()=>r(null), 5000))]),
         ]);
 
