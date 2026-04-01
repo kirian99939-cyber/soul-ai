@@ -61,6 +61,14 @@ export default async function handler(req, res) {
           role: "user",
           content: `You are a master photographer writing a hyper-specific NanoBanana Pro prompt. Study these examples of PERFECT prompts and follow the exact same structure and level of detail.
 
+${referencePhotos.length > 0 && safeOutfitImages.length > 0 ?
+`REFERENCE PHOTOS GUIDE:
+- Photos 1-${referencePhotos.length}: face reference — preserve exact face features, hair color and texture from these photos
+- Photos ${referencePhotos.length+1}-${referencePhotos.length+safeOutfitImages.length}: outfit reference — she must wear EXACTLY this clothing. Copy the garment type, color, fabric, fit precisely.`
+: referencePhotos.length > 0 ?
+`Using reference photos, preserve exact face features, hair color and texture.`
+: ""}
+
 CHARACTER: ${preset}
 EVENT: ${dayTitle || ""}
 NARRATIVE: ${narrativeBit || ""}
@@ -146,9 +154,9 @@ Write ONLY the prompt in English.
   console.log("Cinematic prompt:", prompt);
 
   // Используй этот промпт для NanoBanana
-  const referencePhotos = (persona?.referencePhotos || []).slice(0, 1); // только 1 реф фото
+  const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
   console.log("Outfit images count:", outfitImagesArr.length, "sizes:", outfitImagesArr.map(img => img ? Math.round(img.length/1024) + "KB" : "null"));
-  const allImageUrls = [...referencePhotos, ...safeOutfitImages].filter(Boolean).slice(0, 3);
+  const allImageUrls = [...referencePhotos, ...safeOutfitImages].filter(Boolean).slice(0, 6);
 
   try {
     const submitRes = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
