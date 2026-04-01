@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
   const safeOutfitImages = outfitImagesArr
     .filter(img => img && (img.startsWith("https://") || img.startsWith("http://")))
-    .slice(0, 2);
+    .slice(0, 4);
   console.log("Safe outfit images:", safeOutfitImages.length, safeOutfitImages.map(u => u?.slice(0,50)));
 
   const preset = `${persona?.age || 28} year old woman`;
@@ -62,12 +62,10 @@ export default async function handler(req, res) {
           content: `You are a master photographer writing a hyper-specific NanoBanana Pro prompt. Study these examples of PERFECT prompts and follow the exact same structure and level of detail.
 
 ${referencePhotos.length > 0 && safeOutfitImages.length > 0 ?
-`REFERENCE PHOTOS GUIDE:
-- Photos 1-${referencePhotos.length}: face reference — preserve exact face features, hair color and texture from these photos
-- Photos ${referencePhotos.length+1}-${referencePhotos.length+safeOutfitImages.length}: outfit reference — she must wear EXACTLY this clothing. Copy the garment type, color, fabric, fit precisely.`
-: referencePhotos.length > 0 ?
-`Using reference photos, preserve exact face features, hair color and texture.`
-: ""}
+`REFERENCE PHOTOS:
+- Images 1-${referencePhotos.length}: FACE REFERENCE — preserve exact face, hair color, eye color from these photos
+- Images ${referencePhotos.length+1}-${referencePhotos.length+safeOutfitImages.length}: OUTFIT REFERENCE — copy EXACTLY the clothing shown: garment type, color, fabric, cut, fit. She must wear this exact outfit.`
+: `Using reference photos, preserve exact face features, hair color and texture.`}
 
 CHARACTER: ${preset}
 EVENT: ${dayTitle || ""}
@@ -154,9 +152,10 @@ Write ONLY the prompt in English.
   console.log("Cinematic prompt:", prompt);
 
   // Используй этот промпт для NanoBanana
-  const referencePhotos = (persona?.referencePhotos || []).slice(0, 3);
+  const referencePhotos = (persona?.referencePhotos || []).slice(0, 5);
   console.log("Outfit images count:", outfitImagesArr.length, "sizes:", outfitImagesArr.map(img => img ? Math.round(img.length/1024) + "KB" : "null"));
-  const allImageUrls = [...referencePhotos, ...safeOutfitImages].filter(Boolean).slice(0, 6);
+  const allImageUrls = [...referencePhotos, ...safeOutfitImages].filter(Boolean).slice(0, 9);
+  console.log("imageUrls - face:", referencePhotos.length, "outfit:", safeOutfitImages.length, "total:", allImageUrls.length);
 
   try {
     const submitRes = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
