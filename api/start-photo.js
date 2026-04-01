@@ -23,32 +23,7 @@ export default async function handler(req, res) {
   const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
   const safeOutfitImages = outfitImagesArr.slice(0, 1);
 
-  const ap = persona?.appearance || {};
-  const hairHex = ap.hair || "#888888";
-  const hairDesc = {
-    "#C45518": "copper red curly",
-    "#8B4513": "dark brown straight",
-    "#D4A017": "golden blonde wavy",
-    "#1C1C1C": "dark black straight",
-    "#F5CBA7": "light blonde",
-    "#A0522D": "chestnut brown curly",
-  }[hairHex] || "natural";
-
-  const eyeDesc = {
-    "#7AAAD4": "blue",
-    "#4A7C59": "green",
-    "#8B6914": "brown",
-    "#5B5B5B": "grey",
-    "#2C1810": "dark brown",
-  }[ap.eyes || "#7AAAD4"] || "light";
-
-  const frecklesDesc = ap.freckles ? "light freckles," : "";
-  const skinDesc = ap.skin === "#F5D0B0" ? "fair skin" : ap.skin === "#D4956A" ? "medium skin" : "light skin";
-  const age = persona?.age || 28;
-  const pCity = persona?.city || personaCity || "";
-  const nationality = pCity.toLowerCase().includes("москв") || pCity.toLowerCase().includes("петербург") || pCity.toLowerCase().includes("екатерин") ? "Russian" : "European";
-
-  const preset = `${age} year old ${nationality} woman, ${hairDesc} hair, ${eyeDesc} eyes, ${frecklesDesc} ${skinDesc}, natural makeup, authentic lifestyle photography`;
+  const preset = `${persona?.age || 28} year old woman`;
 
   // Get real Street View photos for location
   let locationPhotos = [];
