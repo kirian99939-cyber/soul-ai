@@ -21,7 +21,10 @@ export default async function handler(req, res) {
   const { postText, persona, season, city, narrativeBit, dayTitle, shotIndex, totalShots, personaCity, arcArchetype, outfitDescription, outfitRefImage, outfitImages, arcContext, photoIdea } = req.body || {};
 
   const outfitImagesArr = Array.isArray(outfitImages) ? outfitImages : (outfitRefImage ? [outfitRefImage] : []);
-  const safeOutfitImages = outfitImagesArr.slice(0, 1);
+  const safeOutfitImages = outfitImagesArr
+    .filter(img => img && (img.startsWith("https://") || img.startsWith("http://")))
+    .slice(0, 2);
+  console.log("Safe outfit images:", safeOutfitImages.length, safeOutfitImages.map(u => u?.slice(0,50)));
 
   const preset = `${persona?.age || 28} year old woman`;
 
