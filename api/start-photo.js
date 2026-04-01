@@ -86,7 +86,7 @@ Expand this idea into a full NanoBanana prompt following the structure:
 ADVENTURE MODE — write a prompt following THIS EXACT STRUCTURE:
 
 1. REFERENCE INSTRUCTION (always first):
-"Using reference photo, preserve exact face features, copper red curly hair, blue eyes, freckles."
+"Using reference photo, preserve exact face features, hair color, eye color and all distinctive features of the person in the reference photo."
 
 2. HOW THE PHONE GOT THERE (make it specific and creative):
 Examples: "shot on iPhone — phone taped with electrical tape to zipline carabiner facing forward", "phone held between teeth of a local fisherman sitting on adjacent rock", "phone fell from hands and is floating face-up on water surface", "phone propped against a coconut on the beach tilted at 45 degrees", "phone handed to a monkey who ran off and accidentally shot this"
@@ -118,7 +118,7 @@ LOCATION LOCK: Every visual detail must scream ${arcContext?.includes("Таил�
 Write ONLY the final prompt in English. Be as specific as these examples. No explanations.
 ` : `
 Write a photorealistic iPhone photo prompt following this structure:
-1. "Using reference photo, preserve exact face features, copper red curly hair, blue eyes, freckles."
+1. "Using reference photo, preserve exact face features, hair color, eye color and all distinctive features of the person in the reference photo."
 2. How/where phone is positioned (creative, specific)
 3. Exact camera angle with degrees
 4. Split-second action description
