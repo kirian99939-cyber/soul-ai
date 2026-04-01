@@ -797,6 +797,7 @@ function SoulEditor({persona, onChange}) {
   const [open, setOpen] = useState(null);
   const [tovLoading, setTovLoading] = useState(false);
   const [astroLoading, setAstroLoading] = useState(false);
+  const [soulGenLoading, setSoulGenLoading] = useState(false);
   const soul = persona.soul || {};
   const upd = useCallback((path, val) => {
     const s = JSON.parse(JSON.stringify(soul));
@@ -892,6 +893,64 @@ function SoulEditor({persona, onChange}) {
 
       {/* Constellation map */}
       <RadialMindMap soul={{...soul, name: persona.name}}/>
+
+      {(!soul.manifesto && !soul.archetypes) && (
+        <div style={{...card(),padding:"20px",marginBottom:16,border:"1px solid rgba(168,192,255,0.2)"}}>
+          <div style={{...u(12,C.ink2),marginBottom:8}}>Душа пустая — сгенерировать через AI?</div>
+          <div style={{...u(10,C.muted),marginBottom:12}}>Claude создаст психологический профиль на основе имени, города и контекста персонажа</div>
+          <button onClick={async()=>{
+            setSoulGenLoading(true);
+            try {
+              const r = await fetch("https://api.anthropic.com/v1/messages",{
+                method:"POST",
+                headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY||"","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+                body:JSON.stringify({
+                  model:"claude-sonnet-4-20250514",
+                  max_tokens:2000,
+                  messages:[{role:"user",content:`Создай детальную душу для AI-блогера.
+
+ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет, ${persona.city}
+БИО: ${persona.bio||""}
+
+Верни ТОЛЬКО валидный JSON объект с полями:
+{
+  "psycho": {"mbti": "", "temperament": "", "enneagram": "", "attachment": ""},
+  "archetypes": "",
+  "manifesto": "",
+  "audience": "",
+  "contentStrategy": "",
+  "visualCode": "",
+  "contentCode": "",
+  "job": "",
+  "hobbies": [],
+  "lifeGoal": "",
+  "dailyRhythm": "",
+  "currentObsession": "",
+  "style": "",
+  "taboo": "",
+  "catchphrases": "",
+  "wounds": [{"text":"","heal":50}],
+  "fears": [{"text":"","pwr":70}],
+  "voices": [{"who":"","says":"","pwr":50}],
+  "obsessive": [{"thought":"","counter":""}],
+  "goals": [{"text":"","pct":20}]
+}`}]
+                })
+              });
+              const d = await r.json();
+              const text = d.content?.[0]?.text?.trim()||"{}";
+              const newSoul = JSON.parse(text.replace(/```json|```/g,"").trim());
+              onChange("soul", {...soul, ...newSoul});
+            } catch(e){console.error(e);}
+            setSoulGenLoading(false);
+          }}
+          style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,rgba(168,192,255,0.15),rgba(196,168,255,0.1))",
+            border:"1px solid rgba(168,192,255,0.3)",borderRadius:10,
+            color:soulGenLoading?"#4A5570":"#A8C0FF",fontFamily:F.b,fontSize:12,fontWeight:600,cursor:soulGenLoading?"wait":"pointer"}}>
+            {soulGenLoading?"⟳ Генерирую душу...":"✦ Сгенерировать душу через AI"}
+          </button>
+        </div>
+      )}
 
       {/* ── IDENTITY — cosmic cards ── */}
       <div style={{background:"rgba(255,255,255,0.03)",borderRadius:18,border:"1px solid rgba(168,192,255,0.08)",overflow:"hidden",boxShadow:"0 4px 32px rgba(0,0,0,0.4)"}}>
