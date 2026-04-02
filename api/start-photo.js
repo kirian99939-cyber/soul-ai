@@ -26,6 +26,12 @@ export default async function handler(req, res) {
     .slice(0, 4);
   console.log("Safe outfit images:", safeOutfitImages.length, safeOutfitImages.map(u => u?.slice(0,50)));
 
+  const referencePhotos = (persona?.referencePhotos || []).filter(url => url?.startsWith("https://"));
+  const allReferencePhotos = referencePhotos.slice(0, 5);
+  const safeOutfitImages2 = outfitImagesArr.filter(img => img && img.startsWith("https://")).slice(0, 3);
+  const allImageUrls = [...allReferencePhotos, ...safeOutfitImages2].filter(Boolean).slice(0, 8);
+  console.log("imageUrls - face:", allReferencePhotos.length, "outfit:", safeOutfitImages2.length, "total:", allImageUrls.length);
+
   const preset = `${persona?.age || 28} year old woman`;
 
   // Get real Street View photos for location
@@ -160,14 +166,6 @@ Write ONLY the prompt in English.
   console.log("Cinematic prompt:", prompt);
 
   // Используй этот промпт для NanoBanana
-  const referencePhotos = (persona?.referencePhotos || []).filter(url => url?.startsWith("https://"));
-
-  // Передаём все референсные фото с инструкцией Claude самому разобраться
-  const allReferencePhotos = referencePhotos.slice(0, 5);
-  const safeOutfitImages2 = outfitImagesArr.filter(img => img && img.startsWith("https://")).slice(0, 3);
-  const allImageUrls = [...allReferencePhotos, ...safeOutfitImages2].filter(Boolean).slice(0, 8);
-  console.log("imageUrls - face:", allReferencePhotos.length, "outfit:", safeOutfitImages2.length, "total:", allImageUrls.length);
-
   try {
     const submitRes = await fetch("https://api.nanobananaapi.ai/api/v1/nanobanana/generate-pro", {
       method: "POST",
