@@ -85,7 +85,16 @@ CHARACTER: ${preset}
 EVENT: ${dayTitle || ""}
 NARRATIVE: ${narrativeBit || ""}
 POST: "${postText}"
-LOCATION: ${arcContext ? `Arc journey: ${arcContext}` : (city || personaCity || persona?.city || "unknown")}
+STEP 1 — DETERMINE LOCATION (priority order):
+1. Arc context location: "${arcContext}" → extract city/country from Point A
+2. Day narrative location: "${narrativeBit}" → extract if mentioned
+3. Post text location: "${postText}" → extract if mentioned
+4. Current location from persona profile: "${persona?.soul?.currentLocation || ""}"
+5. LAST RESORT: persona home city "${personaCity || persona?.city || 'unknown'}"
+
+The persona home city is WHERE SHE IS FROM, not where she is NOW.
+Always use the most specific and recent location available.
+LOCATION: ${arcContext ? `Arc journey: ${arcContext}` : (persona?.soul?.currentLocation || city || personaCity || persona?.city || "unknown")}
 SEASON: ${season}
 SHOT NUMBER: ${(shotIndex||0)+1} of ${totalShots||3}
 OUTFIT: ${outfitDescription || "match the activity"}

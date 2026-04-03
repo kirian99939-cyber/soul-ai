@@ -1372,6 +1372,16 @@ function SoulEditor({persona, onChange}) {
         </div>
         <div style={{padding:"14px 20px",display:"flex",flexDirection:"column",gap:12}}>
 
+          <div style={{marginBottom:12}}>
+            <div style={{...u(11,C.ink2,600),marginBottom:6}}>📍 Сейчас нахожусь</div>
+            <input value={soul.currentLocation||""}
+              onChange={e=>onChange("soul",{...soul,currentLocation:e.target.value})}
+              placeholder="Бангкок, Вьетнам, Тбилиси..."
+              style={{width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(168,192,255,0.1)",
+                borderRadius:8,padding:"8px 12px",color:C.ink,fontFamily:F.b,fontSize:13,boxSizing:"border-box"}}/>
+            <div style={{...u(9,C.muted),marginTop:4}}>Текущая локация — используется в Studio и как fallback для арок</div>
+          </div>
+
           {/* Работа */}
           <div>
             <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:8,color:"#4A5570",letterSpacing:2,textTransform:"uppercase",marginBottom:5}}>💼 Работа</div>
@@ -2332,6 +2342,7 @@ ${soul.dailyRhythm ? `\nРИТМ ДНЯ: ${soul.dailyRhythm}` : ""}
 
 ТЕКУЩАЯ ДАТА: ${new Date().toLocaleDateString("ru", {day:"numeric", month:"long", year:"numeric"})}
 СЕЗОН: ${getSeason()} — учитывай в деталях (одежда, погода, настроение)
+${soul.currentLocation ? `ТЕКУЩАЯ ЛОКАЦИЯ ПЕРСОНАЖА: ${soul.currentLocation}` : ""}
 
 ВАЖНО ПРО ЛОКАЦИЮ: Арка происходит в том месте которое указано в Точке А, НЕ в городе профиля персонажа (${persona.city} — это откуда она, не где она сейчас). Если в Точке А написано "Вьетнам" — вся арка во Вьетнаме.
 
@@ -4189,7 +4200,7 @@ export default function PersonaOS() {
               </div>
               <div style={{flex:1}}>
                 <div style={{fontFamily:"'Unbounded',sans-serif",fontSize:13,fontWeight:700,color:"#F0F4FF",letterSpacing:"0.04em"}}>{sel.name}</div>
-                <div style={{fontSize:9,color:"#4A5570",marginTop:2,fontFamily:"'DM Sans',sans-serif",letterSpacing:0.5}}>@{sel.handle} · {sel.brand} · {sel.city}</div>
+                <div style={{fontSize:9,color:"#4A5570",marginTop:2,fontFamily:"'DM Sans',sans-serif",letterSpacing:0.5}}>@{sel.handle} · {sel.brand} · {sel.currentLocation || sel.city}</div>
               </div>
               {/* Stats */}
               <div style={{display:"flex",gap:6}}>
