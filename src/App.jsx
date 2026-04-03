@@ -2310,7 +2310,8 @@ function ArcTab({ persona, onSave, onSavePhoto }) {
     const fears  = (soul.fears||[]).map(f=>`${f.text}(${f.pwr}%)`).join("; ");
     return `Ты — архитектор нарративной арки для AI-блогера.
 
-ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет, ${persona.city}
+ПЕРСОНАЖ: ${persona.name}, ${persona.age} лет
+ТЕКУЩАЯ ЛОКАЦИЯ ИЗ ТОЧКИ А: определи из контекста ниже — это важнее чем город профиля
 Архетипы: ${soul.archetypes||""}
 Раны: ${wounds}
 Страхи: ${fears}
@@ -2331,6 +2332,8 @@ ${soul.dailyRhythm ? `\nРИТМ ДНЯ: ${soul.dailyRhythm}` : ""}
 
 ТЕКУЩАЯ ДАТА: ${new Date().toLocaleDateString("ru", {day:"numeric", month:"long", year:"numeric"})}
 СЕЗОН: ${getSeason()} — учитывай в деталях (одежда, погода, настроение)
+
+ВАЖНО ПРО ЛОКАЦИЮ: Арка происходит в том месте которое указано в Точке А, НЕ в городе профиля персонажа (${persona.city} — это откуда она, не где она сейчас). Если в Точке А написано "Вьетнам" — вся арка во Вьетнаме.
 
 ТЕКУЩЕЕ СОСТОЯНИЕ (Точка А):
 ${ptA}
